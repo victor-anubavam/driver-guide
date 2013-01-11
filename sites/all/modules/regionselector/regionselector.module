@@ -1,0 +1,2481 @@
+<?php
+/*
+* Paolo Mainardi (paolo@twinbit.it)
+*
+* Based on: http://blog.jeremymartin.name/2008/02/easy-multi-select-transfer-with-jquery.html
+*
+*/
+
+
+function ep($obj) {
+	echo '<pre>'; print_r($obj);
+}
+function epe($obj) {
+	ep($obj); exit;
+}
+
+function regionselector_menu () {
+    $items = array();
+    $items['mycart'] = array(
+    'title'             => 'MY CART',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('cart_checkout'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'regionselector.inc',
+    );
+    $items['travelinformation'] = array(
+    'title'             => 'Travel information',    
+    'page callback'     => 'drupal_get_form',   
+    'page arguments'    => array('travel_informationold'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'regionselector.inc',
+    );
+    
+    $items['payment'] = array(
+    'title'             => 'Payment',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('checkout_payment'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'regionselector.inc',
+    );
+    
+     $items['payment-complete'] = array(
+    'title'             => 'Payment Completed',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('paymentComplete'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'regionselector.inc',
+    );
+   
+     $items['travel_information'] = array(
+      'title' => 'AJAX modal dialog',
+      'page callback' => 'travel_information_popup',
+      'page arguments' => array(2),
+      'access callback' => TRUE,
+      'type' => MENU_CALLBACK,
+    );
+    return $items;
+}
+
+function regionselector_form_alter(&$form, &$form_state, $form_id)
+{
+	if($form['#id']='service-as-transfer-node-form')
+	{
+                
+		$form['#after_build'][] = '_regionselector_after_build';
+		
+		if(isset($form['field_region']))
+		{
+		$form['field_region']['und']['#attributes']['onchange']= "regionFrom(this,'edit-field-region-from-und-select','edit-field-region-to-und-select')";
+		$form['field_region_from']['und']['#attributes']['onchange']= "regionTo(this,'edit-field-region-und-select','edit-field-region-to-und-select')";
+		}
+		
+		$i=0;		
+		do {
+			if(isset($form['field_transfer_price']['und'][$i]))
+			{
+			$form['field_transfer_price']['und'][$i]['field_region']['und']['#attributes']['onchange']= "regionFrom(this,'edit-field-transfer-price-und-".$i."-field-region-from-und-select','edit-field-transfer-price-und-".$i."-field-region-to-und-select')";
+			$form['field_transfer_price']['und'][$i]['field_region_from']['und']['#attributes']['onchange']= "regionTo(this,'edit-field-transfer-price-und-".$i."-field-region-und-select','edit-field-transfer-price-und-".$i."-field-region-to-und-select')";
+			$i++;
+			}
+			else{
+				$i=-1;
+			}
+			
+		} while ($i > 0);
+		
+		$options = array('type' => 'file');
+		//Load the js file.
+		drupal_add_js(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/custom_script.js', $options);
+		
+	}
+		
+}
+
+function _regionselector_after_build(&$form, $form_state) {
+	
+    $options = array('type' => 'file');
+	//Load the js file.
+       
+	drupal_add_js(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/custom_script.js', $options);
+        drupal_add_js(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/cart.js', $options);
+        drupal_add_js(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/formwizard.js', $options);
+        drupal_add_js(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/datepick.js', $options);
+        drupal_add_css(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/datepicknew/css/jquery-ui-timepicker-addon.css', $options);
+        drupal_add_css(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/datepicknew/css/jquery-ui.css', $options);
+	
+        return $form;
+}
+
+function travel_information_popup($js = NULL) {   
+  // degrade half-assed to no js
+  if(!$js) {
+    return drupal_get_form('travel_information_form');
+  }
+  // adelante!
+  ctools_include('modal');
+  ctools_include('ajax');  
+  
+  
+  $form_state = array(
+    'title' => t('Travel Information form...'),
+    'ajax' => TRUE,
+  );
+  $output = ctools_modal_form_wrapper('travel_information_form', $form_state);
+
+    // We'll just overwrite the form output if it was successful.
+    $output = array();
+    $output[] = ctools_modal_command_dismiss(t('Success!'));
+    // If you want to leave a message and links://travel_information()
+    $output[]=ctools_modal_command_display(t(urldecode(arg(3)).' information'), travel_information(arg(1),arg(2)));
+     $options = array('type' => 'file');
+    drupal_add_js(drupal_get_path('theme', 'privatetransfer_theme'). '/scripts/formwizard.js', $options);
+  
+    
+ 
+    
+    
+    drupal_add_js(array(
+    'CToolsModal' => array(
+      'closeImage' => theme('image', array(
+        'path' => drupal_get_path('theme', 'privatetransfer_theme') . ('/css/images/trav_close.gif'),
+        'title' => t(''),
+        'alt' => t(''),
+      )),
+  )), 'setting');
+
+  print ajax_render($output);
+
+   
+  exit;
+}
+
+function travel_information($arg1,$arg2)
+{
+    global $user;
+    global $base_url;
+    global $base_path;
+    $nid='';    
+    if($arg1 && trim($arg1)!='')
+    {
+        $nid=trim($arg1);
+        $node=node_load($nid);
+    }
+    
+    $typeTransfer='';
+    $type='';
+    
+    if($arg2 && trim($arg2)!='')
+    {
+        $typeTransfer=$arg2;
+        $type=$arg2;
+    }
+    
+    $cart =array();
+    if(isset($_SESSION['products']))
+    $cart = unserialize($_SESSION['products']);
+    
+    $arrivTxt='Arrival';
+    if($typeTransfer=='out' || $typeTransfer=='Out')
+    {
+        $arrivTxt='Departure';
+    }
+  
+    $res=db_query("SELECT n.title as title,ac.field_airport_code_value as code from node n LEFT JOIN field_data_field_airport_code ac on n.nid=ac.entity_id WHERE n.type='arrival_airport'");
+    $res_flight_dest=db_query("SELECT n.title as title,ac.field_airport_code_value as code from node n LEFT JOIN field_data_field_airport_code ac on n.nid=ac.entity_id WHERE n.type='flight_destination_airports'");
+    $output='<form name="service-as-transfer-node-form-trav" id="service-as-transfer-node-form-trav"><div id="com_hid"><input type="hidden" value="'.$node->type.'" id="serv_type" name="service_type" />
+             <input  type="hidden" value="'.$nid.'" id="nid" name="nid" />
+             <input  type="hidden" value="'.$arg2.'" id="typetrans" name="typetrans" />    </div>';
+    $output.='<div id="filData">Mandatory field. <span class="req">*</span></div><div id="node_service_as_transfer">
+        <fieldset class="sectionwrap" id="step_0">
+<legend>Product Information</legend>
+<table>
+    <tr style="top:border:none;">
+        <td class="clstdfirst">'.$arrivTxt.' time<span class="req">*</span>:</td>
+        <td><select name="arrival_tm" id="arrival_tm" class="required" onchange="nightCharge(this)">
+<option value="" selected="selected">Select</option>';
+$arrival_tm='';
+if(isset($cart[$nid]['person_details'][$type]['arrival_tm'])){$arrival_tm=$cart[$nid]['person_details'][$type]['arrival_tm'];}
+if($arrival_tm=='1')
+{
+$output.='<option selected="selected" value="1">Between 7:00 AM & 8:00 PM</option>';
+}
+else
+{
+$output.='<option value="1">Between 7:00 AM & 8:00 PM</option>';
+}
+if($arrival_tm=='2')
+{
+    $output.='<option selected="selected" value="2">Between 8:00 PM & 7:00 AM</option>';
+}
+else {
+    $output.='<option value="2">Between 8:00 PM & 7:00 AM</option>';
+}
+
+$output.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>A night rate applies between 8.00pm and 7.00am.</span></a></td>
+    </tr>
+     </tr>
+     <td class="clstdfirst">Luggage :</td>
+        <td>';
+        $output.='<div><div class="inbag"><div class="fLeft"><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/wheely.png" /></div>
+            <div class="fLeftbag">
+<select name="wheely_bag" id="wheely_bag" class="prod_bag">
+<option value="" selected="selected">Select</option>';
+$wheely_bag='';
+if(isset($cart[$nid]['person_details'][$type]['wheely_bag'])){$wheely_bag=$cart[$nid]['person_details'][$type]['wheely_bag'];}
+    if(isset($node->field_maximum_luggage['und'][0]['value']))
+    {
+      for($i=1;$i<=$node->field_maximum_luggage['und'][0]['value'];$i++)
+      {
+          $selected_wbag='';
+          if($wheely_bag==$i){$selected_wbag.='selected="selected"';} 
+          $output.='<option value="'.$i.'" '.$selected_wbag.' >'.$i.'</option>';
+      }
+    }
+$output.='</select></div></div><div><div class="fLeft"><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/regular.png" /></div>
+    <div class="fLeftbag">
+    <select name="regular_bag" id="regular_bag"  class="prod_bag">
+    <option value="" selected="selected">Select</option>';
+$regular_bag='';
+if(isset($cart[$nid]['person_details'][$type]['regular_bag'])){$regular_bag=$cart[$nid]['person_details'][$type]['regular_bag'];}
+    if(isset($node->field_maximum_luggage['und'][0]['value']))
+    {
+      for($i=1;$i<=$node->field_maximum_luggage['und'][0]['value'];$i++)
+      {
+          $selected_rbag='';
+          if($regular_bag==$i){$selected_rbag.='selected="selected"';}  
+          $output.='<option value="'.$i.'" '.$selected_rbag.'>'.$i.'</option>';
+      }
+    }
+$output.='</select></div></div>
+        </td>
+    </tr>
+    </tr>
+     <td class="clstdfirst">Number of people<span class="req">*</span>:</td>
+        <td><div class="fLeft"><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/nombre_icon.png" /></div>
+    <div class="fLeftbag"><select name="no_people" id="no_people" class="required" >
+<option value="" selected="selected">-Number of people-</option>';
+    $no_people='';
+    if(isset($cart[$nid]['person_details'][$type]['no_people'])){   
+    $no_people=trim($cart[$nid]['person_details'][$type]['no_people']); 
+    }
+    if(isset($node->field_maximum_number_of_passenge['und'][0]['value']))
+    {
+      for($i=1;$i<=$node->field_maximum_number_of_passenge['und'][0]['value'];$i++)
+      {
+          $selected_people='';
+          if($no_people==$i){$selected_people.='selected="selected"';}  
+          $output.='<option value="'.$i.'" '.$selected_people.'>'.$i.'</option>';
+      }
+    }
+    $selected_no_people='';
+    if($no_people=='Others'){$selected_no_people='selected="selected"';} 
+    $output.='<option value="Others" '.$selected_no_people.'>Others</option>';
+    $showDiv='';
+    if($no_people!='' && $no_people=='Others')
+    {
+        $showDiv='style="display:block"';
+    }
+    $no_people_OthersTxt='';
+    if(isset($cart[$nid]['person_details'][$type]['no_people_OthersTxt']) && trim($cart[$nid]['person_details'][$type]['no_people_OthersTxt'])!=''){ $no_people_OthersTxt=trim($cart[$nid]['person_details'][$type]['no_people_OthersTxt']);}
+$output.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>When a number of people chooses more than '.trim($node->field_maximum_number_of_passenge['und'][0]['value']).'. It doubles the quantity and price.</span></a></div>
+    <div id="no_people_Others" '.$showDiv.'>
+<input class="onlyNum" maxlength="2" onkeyup="nopeopleUpd(this,\''.trim($node->field_maximum_number_of_passenge['und'][0]['value']).'\')" 
+        id="no_people_OthersTxt" name="no_people_OthersTxt" value="'.$no_people_OthersTxt.'" ></input>
+
+
+        </td>
+    </tr>
+    <tr>
+    <td>Do you have Odd luggage?</td>
+    <td><div class="fLeft"><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/add_luggage.png" /></div>
+        <div class="fLeftbag"><select name="odd_bag" id="odd_bag" class="required" onchange="extraCharge(this)"></div>
+<option value="" selected="selected">- Num of odd bags-</option>';
+$odd_bag='';
+if(isset($cart[$nid]['person_details'][$type]['odd_bag'])){$odd_bag=$cart[$nid]['person_details'][$type]['odd_bag'];}
+for($i=0;$i<4;$i++)
+{
+    $selected_odd_bag='';
+    if($odd_bag==$i){$selected_odd_bag.='selected="selected"';}   
+    $output.='<option value="'.$i.'" '.$selected_odd_bag.'>'.$i.'</option>';
+}
+$selected_odd_bag='';
+if($odd_bag=='Others'){$selected_odd_bag='selected="selected"';} 
+$output.='<option value="Others" '.$selected_odd_bag.'>Others</option>
+</select> <a class="infoIcon2"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>When a number of Odd luggage chooses more than 0. Extra service charges will be added.</span></a></div>';
+$showDiv='';
+if($odd_bag!='' && $odd_bag=='Others')
+{
+    $showDiv='style="display:block"';
+}
+$output.='<div id="odd_bag_Others" '.$showDiv.'><input class="onlyNum" maxlength="2" id="odd_bag_OthersTxt" name="odd_bag_OthersTxt" value="';
+if($odd_bag!='' && $odd_bag=='Others' && isset($cart[$nid]['person_details'][$type]['odd_bag_OthersTxt'])){echo $cart[$nid]['person_details'][$type]['odd_bag_OthersTxt'];}
+$output.='" ></input></div></td>
+    </tr> 
+    <tr>
+    <td>Description of odd luggage:</td>
+    <td><div><textarea name="dsec_lugg" id="desc_lugg">';
+if(isset($cart[$nid]['person_details'][$type]['dsec_lugg'])){$output.=$cart[$nid]['person_details'][$type]['dsec_lugg'];}
+$output.='</textarea><br/><br/></div></td>
+    <tr>';
+$unilist='style="display:none"';
+$ntRateshow='style="display:none"';
+$extrashow='style="display:none"';
+$qtyshow='style="display:none"';
+
+
+if(isset($node->field_maximum_number_of_passenge['und'][0]['value']) && isset($cart[$nid]['product_details'][$arg2]['qty']) && $cart[$nid]['person_details'][$type]['no_people']='Others' && trim($cart[$nid]['person_details'][$type]['no_people_OthersTxt'])!='' && $cart[$nid]['person_details'][$type]['no_people_OthersTxt']>trim($node->field_maximum_number_of_passenge['und'][0]['value']))
+{    
+    $unilist='style="display:block"';
+    $qtyshow='style="display:block"';
+} 
+if(isset($cart[$nid]['person_details'][$type]['odd_bag']) && trim($cart[$nid]['person_details'][$type]['odd_bag'])!='' && ($cart[$nid]['person_details'][$type]['odd_bag']>0 || $cart[$nid]['person_details'][$type]['odd_bag']=='Others') )
+{    
+    $unilist='style="display:block"';
+    $extrashow='style="display:block"';
+}
+if(isset($cart[$nid]['person_details'][$type]['arrival_tm']) && trim($cart[$nid]['person_details'][$type]['arrival_tm'])=='2' )
+{
+    $unilist='style="display:block"';
+    $ntRateshow='style="display:block"';
+}
+
+    $output.='<td colspan="2">
+        <div id="extra_charge" '.$unilist.'>
+        <ul class="unilist">
+         <li '.$ntRateshow.' id="ntrate" ><span class="tick">✓</span>A night rate applies between 8.00pm and 7.00am.</li>
+         <li '.$qtyshow.' id="qty" ><span class="tick">✓</span>Number of people more than '.trim($node->field_maximum_number_of_passenge['und'][0]['value']).'. It doubles the quantity and price.</li>
+         <li '.$extrashow.'id="extra" ><span class="tick">✓</span>Extra service charges for odd lugage is subject to extra quote from private-transfer.fr staff.</li>    
+         </ul>
+        </div>
+    </td>
+    </tr>
+ </table>
+ </fieldset>';
+
+    if($node->type=='driver_at_disposal')
+    {
+        //$typeTransfer=$arg2;
+        //$type=$arg2;     
+        $cart = unserialize($_SESSION['products']);
+        $Step2cont=''; 
+         if($typeTransfer=='driv')
+         {
+            $cartObj=array();
+            $cartObj=$cart[$nid]['product_details'][$type]; 
+            $Step2cont.='<fieldset class="sectionwrap" id="step_1">
+            <legend>Driver at Disposal</legend>
+            <table>
+            <!--<tr style="top:border:none;">
+        <td class="clstdfirst">Airport of arrival one France:</td>
+        <td>
+        <select name="ariport_arriv" id="ariport_arriv" class="required">
+        <option value="" selected="selected">Select</option>
+        <option value="1">Between 7:00 AM & 8:00 PM</option>
+<option value="2">Between 8:00 PM & 7:00 AM</option>
+        </select></td>
+    </tr>-->
+    <tr>
+        <td>Day of service<span class="req">*</span>:</td><td class="clsplsecond">';
+        $service_day='';
+        if(isset($cartObj['service_day'])){$service_day=$cartObj['service_day'];}
+         $Step2cont.='<input type="text" name="service_day" id="service_day" value="'.$service_day.'" class="serviceDayCal required" readonly="true" maxlength="10"/><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/scripts/cal.gif" class="calimg" id="serviceday_calimg"  /> 
+         </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Pickup Address<span class="req">*</span>:</td>
+        <td> <select name="pick_addr" id="pick_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $selectregion=$cartObj['srch']['selectregion'];
+        if($selectregion=='Paris & Parisian region'){ $selectregion='Paris'; }
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$selectregion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $pick_addr='';
+            if(isset($cartObj['pick_addr']) && trim($cartObj['pick_addr'])==trim($record->title))
+            {
+                $pick_addr='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$pick_addr.'>'.$record->title.'</option>';
+        }
+        if($cartObj['pick_addr'] == "Other"){
+		$pick_addr='selected="selected"';
+	}
+	 $Step2cont.='<option value="Other" '.$pick_addr.'>other</option>';
+        $showDiv='';
+        $pick_addr_OthersTxt='';
+        if(isset($cartObj['pick_addr']) && trim($cartObj['pick_addr'])!='')
+        {
+            $showDiv='style="display: table-row"';
+            $pick_addr_OthersTxt=$cartObj['pick_addr_OthersTxt'];
+        }
+        $Step2cont.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>When a pickup address is then chooses the correct address is displayed outside the drop down. And if the user selects Other from the drop down, then input that appears to the user enters the correct address.</span></a></td>
+    </tr>
+    <tr id="pick_addr_Others" '.$showDiv.'>
+        <td class="clstdfirst"></td>
+        <td><textarea id="pick_addr_OthersTxt" name="pick_addr_OthersTxt">'.$pick_addr_OthersTxt.'</textarea></td>
+    </tr> 
+     <tr>
+        <td>Departure Time<span class="req">*</span>:</td><td style="float:left">';
+        $dept_hr='';
+        if(isset($cartObj['dept_hr'])){$dept_hr=$cartObj['dept_hr'];}
+        $dept_mt='';
+        if(isset($cartObj['dept_mt'])){$dept_mt=$cartObj['dept_mt'];}
+        $dept_meridian='';
+        if(isset($cartObj['dept_meridian'])){$dept_meridian=$cartObj['dept_meridian'];}
+        $dept_hr_mt='';
+        if($dept_hr!='' && $dept_mt!='' && $dept_meridian!='')
+        {
+        $dept_hr_mt=$dept_hr.':'.$dept_mt.' '.$dept_meridian;
+        }
+        $Step2cont.='<input readonly="true" type="text" name="dept_hr_mt" id="dept_hr_mt" value="'.$dept_hr_mt.'" class="sliderhrmt required"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="serviceday_hrimg"  />  
+    </td>
+    </tr>
+     <tr>
+        <td>Time of Arrival<span class="req">*</span>:</td><td style="float:left">';
+       $arriv_hr='';
+       if(isset($cartObj['arriv_hr'])){$arriv_hr=$cartObj['arriv_hr'];}       
+       $arriv_mt='';
+       if(isset($cartObj['arriv_mt'])){$arriv_mt=$cartObj['arriv_mt'];}      
+       $arriv_meridian='';
+       if(isset($cartObj['arriv_meridian'])){$arriv_meridian=$cartObj['arriv_meridian'];}    
+       $arriv_hr_mt='';
+        if($arriv_hr!='' && $arriv_mt!='' && $arriv_meridian!='')
+        {
+            $arriv_hr_mt=$arriv_hr.':'.$arriv_mt.' '.$arriv_meridian;
+        }  
+        $Step2cont.='<input readonly="true" type="text" name="arriv_hr_mt" id="arriv_hr_mt" value="'.$arriv_hr_mt.'" class="sliderhrmt required"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_hrimg"  />         
+</td>
+    </tr> 
+    <tr>
+        <td class="clstdfirst">Destination address<span class="req">*</span>:</td>
+        <td> <select name="dest_addr" id="dest_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $selectregion=$cartObj['srch']['selectregion'];
+        if($selectregion=='Paris & Parisian region'){ $selectregion='Paris'; }
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$selectregion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $dest_addr='';
+	    //echo $cartObj['dest_addr'];
+            if(isset($cartObj['dest_addr']) && trim($cartObj['dest_addr'])==trim($record->title))
+            {
+                $dest_addr='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$dest_addr.'>'.$record->title.'</option>';
+        }
+	if($cartObj['dest_addr'] == "Other"){
+		$dest_addr='selected="selected"';
+	}
+	 $Step2cont.='<option value="Other" '.$dest_addr.'>other</option>';
+        $showDiv='';
+        $dest_addr_OthersTxt='';
+        if(isset($cartObj['dest_addr']) && trim($cartObj['dest_addr'])!='')
+        {
+            $showDiv='style="display: table-row"';
+            $dest_addr_OthersTxt=$cartObj['dest_addr_OthersTxt'];
+        }
+        $Step2cont.='</select> <a class="infoIcon2"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>When a destination address is then chooses the correct address is displayed outside the drop down. And if the user selects Other from the drop down, then input that appears to the user enters the correct address.</span></a><br/><br/></td>
+    </tr>
+    <tr id="dest_addr_Others" '.$showDiv.'>
+        <td class="clstdfirst"></td>
+        <td><textarea id="dest_addr_OthersTxt" name="dest_addr_OthersTxt" cols="22">'.$dest_addr_OthersTxt.'</textarea><br/><br/></td>
+    </tr>     
+    <tr>
+        <td class="clstdfirst">Name and address<span class="req">*</span>:</td>
+        <td> <select name="name_addr" id="name_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $selectregion=$cartObj['srch']['selectregion'];
+        if($selectregion=='Paris & Parisian region'){ $selectregion='Paris'; }
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$selectregion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $name_addr='';
+            if(isset($cartObj['name_addr']) && trim($cartObj['name_addr'])==trim($record->title))
+            {
+                $name_addr='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$name_addr.'>'.$record->title.'</option>';
+        }
+        if($cartObj['name_addr'] == "Other"){
+		$name_addr='selected="selected"';
+	}
+	 $Step2cont.='<option value="Other" '.$name_addr.'>other</option>';
+        $showDiv='';
+        $name_addr_OthersTxt='';
+        if(isset($cartObj['name_addr']) && trim($cartObj['name_addr'])!='')
+        {
+            $showDiv='style="display: table-row"';
+            $name_addr_OthersTxt=$cartObj['name_addr_OthersTxt'];
+        }
+        $Step2cont.='</select> <a class="infoIcon3"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>The fields "name and address" only appears if destination = evening and filtered dependemment destination.</span></a></td>
+    </tr>
+   <tr id="name_addr_Others" '.$showDiv.'>
+        <td class="clstdfirst"></td>
+        <td><textarea id="name_addr_OthersTxt" name="name_addr_OthersTxt">'.$name_addr_OthersTxt.'</textarea></td>
+    </tr>     
+    <tr>
+        <td class="clstdfirst">End of service address<span class="req">*</span>:</td>
+        <td> <select name="endserv_addr" id="endserv_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $selectregion=$cartObj['srch']['selectregion'];
+        if($selectregion=='Paris & Parisian region'){ $selectregion='Paris'; }
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$selectregion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $endserv_addr='';
+            if(isset($cartObj['endserv_addr']) && trim($cartObj['endserv_addr'])==trim($record->title))
+            {
+                $endserv_addr='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$endserv_addr.'>'.$record->title.'</option>';
+        }
+        if($cartObj['endserv_addr'] == "Other"){
+		$endserv_addr='selected="selected"';
+	}
+	 $Step2cont.='<option value="Other" '.$endserv_addr.'>other</option>';
+        $showDiv='';
+        $endserv_addr_OthersTxt='';
+        if(isset($cartObj['endserv_addr']) && trim($cartObj['endserv_addr'])!='')
+        {
+            $showDiv='style="display: table-row"';
+            $endserv_addr_OthersTxt=$cartObj['endserv_addr_OthersTxt'];
+        }
+        $Step2cont.='</select> <a class="infoIcon4"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>End of service address = default pickup address.</span></a></td>
+    </tr>
+    <tr id="endserv_addr_Others" '.$showDiv.'>
+        <td class="clstdfirst"></td>
+        <td><textarea id="endserv_addr_OthersTxt" name="endserv_addr_OthersTxt">'.$endserv_addr_OthersTxt.'</textarea></td>
+    </tr>    
+   <tr>
+        <td>Driver language<span class="req">*</span>:</td><td>';
+        $Step2cont.='<select name="driv_lang" id="driv_lang" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_driv_lang=db_query("SELECT lang.field_driver_language_value as title from node as n left join field_data_field_driver_language as lang on n.nid=lang.entity_id  WHERE n.type='driver_language_by_region'  and n.title='".$selectregion."'");
+        foreach ($res_driv_lang as $record) {
+            $driv_lang='';
+            if(isset($cartObj['driv_lang']) && trim($cartObj['driv_lang'])==trim($record->title))
+            {
+                $driv_lang='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$driv_lang.'>'.$record->title.'</option>';
+        }
+      $Step2cont.='</select></td>
+   </tr>
+   <tr>
+        <td>Special requests or comments:</td><td><textarea name="spl_comment" id="spl_comment">';
+        if(isset($cartObj['spl_comment']) && trim($cartObj['spl_comment'])!='')
+        {
+            $Step2cont.=trim($cartObj['spl_comment']);
+        }
+      $Step2cont.='</textarea></td>
+   </tr>
+
+</table>
+<div id="addmoreDiv">
+ <table>
+    <tr style="top:border:none;">
+        <td class="clstdfirst">Title<span class="req">*</span>:</td>
+        <td>
+        <select name="surtitle" recname="surtitle" id="surtitle" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_pre_name_title=db_query("SELECT title from node WHERE type='pre_name_title'");
+        foreach ($res_pre_name_title as $record) {
+            $Step2cont.='<option value="'.$record->title.'">'.$record->title.'</option>';
+        }       
+        $Step2cont.='</select>&nbsp;<a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>one main contact minimum is required.</span></td>
+    </tr>
+    
+    <tr>
+        <td class="clstdfirst">First name<span class="req">*</span></td>
+        <td>
+        <input type="text" class="required" name="fname" recname="fname" id="fname" value="" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Last name<span class="req">*</span></td>
+        <td>
+        <input type="text" class="required" name="pasengername" recname="pasengername" id="pasengername" value="" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Tel Num:</td>
+        <td>
+        <input type="text" name="tnum" recname="tnum" id="tnum" value="" />
+        </td>
+    </tr>
+</table>
+</div>';
+//$Step2cont.='<input type="submit" class="submit" value="Submit"/>';
+$Step2cont.='<span id="submitTrav">Submit</span><input type="hidden" name="hid_reload" id="hid_reload" value="N"/>';
+$Step2cont.='</fieldset>';
+$arr='';
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        $arr.='{surtitle : "'.$cartObj['passengerDetails'][$i]['surtitle'].'"
+            ,pasengername : "'.$cartObj['passengerDetails'][$i]['pasengername'].'",
+            fname : "'.$cartObj['passengerDetails'][$i]['fname'].'",
+            tnum : "'.$cartObj['passengerDetails'][$i]['tnum'].'"
+            }'; 
+        if($i!=count($cartObj['passengerDetails'])-1)
+        $arr.=',';
+    }
+}
+$Step2cont.='<script language="javascript">';   
+if($arr!='')
+{
+    $cntarr=count($cartObj['passengerDetails'])-1;
+$Step2cont.='jQuery("#addmoreDiv").EnableMultiField({ data:['.$arr.'] });';
+$Step2cont.="addmoreArray=['surtitle_".$cntarr."', 'pasengername_".$cntarr."','fname_".$cntarr."'];";
+$Step2cont.="jQuery('.removeFields').trigger('click');";
+
+}
+else{
+$Step2cont.='jQuery("#addmoreDiv").EnableMultiField();';
+}
+$Step2cont.='</script>';
+         }
+    }
+    else if($node->type=='service_as_transfer')
+    {
+    $typeTransfer=$arg2;
+    $type=$arg2;     
+    $cart = unserialize($_SESSION['products']);
+    $Step2cont='';
+    if($typeTransfer=='in' || $typeTransfer=='in&out')
+    {
+        $cartObj=array();
+        $srchRegion='';
+        if($typeTransfer=='in&out')
+        {  
+            if(isset($cart[$nid]['product_details'][$type]['in']))
+            $cartObj=$cart[$nid]['product_details'][$type]['in'];
+            
+            $srchRegion=$cart[$nid]['product_details'][$type]['srch']['selectregion'];
+        }
+        else
+        {
+        $cartObj=$cart[$nid]['product_details'][$type]; 
+        $srchRegion=$cartObj['srch']['selectregion'];
+        }
+       
+            $Step2cont.='<fieldset class="sectionwrap" id="step_1">
+    <legend>Travel Information In</legend>
+    <table>
+        <tr>
+        <td colspan="2"><div class="cartErrMsg"> Arrival time Between 8:00 PM & 7:00 AM </div>
+        <div class="calMsg"> <span class="tick">✓</span>A night rate applies between 8.00pm and 7.00am. </div></td>
+        </tr>
+        <!--<tr style="top:border:none;">
+            <td class="clstdfirst">Airport of arrival one France:</td>
+            <td>
+            <select name="ariport_arriv" id="ariport_arriv" class="required">
+            <option value="" selected="selected">Select</option>
+            <option value="1">Between 7:00 AM & 8:00 PM</option>
+    <option value="2">Between 8:00 PM & 7:00 AM</option>
+            </select></td>
+        </tr>-->
+        <tr>
+            <td class="clstdfirst">Airport or train station of Arrival<span class="req">*</span>:</td>
+            <td>
+            <select name="ariport_origin" id="ariport_origin" class="required">
+            <option value="" selected="selected">Select</option>';
+            $ariport_origin='';
+        if(isset($cartObj['ariport_origin'])){$ariport_origin=$cartObj['ariport_origin'];}
+        foreach ($res as $record) {
+            $selected_ariport_origin='';
+            if($ariport_origin==trim($record->title." (".$record->code.")")){$selected_ariport_origin.='selected="selected"';}  
+            $Step2cont.='<option value="'.$record->title.' ('.$record->code.')" '.$selected_ariport_origin.'>'.$record->title.' ('.$record->code.')</option>';
+        }
+      $Step2cont.='</select></td>
+    </tr>
+    <tr>
+        <td>Arrival day<span class="req">*</span>:</td><td class="clsplsecond">';
+        $arriv_day='';
+        if(isset($cartObj['arriv_day'])){$arriv_day=$cartObj['arriv_day'];}
+         $Step2cont.='<input type="text" name="arriv_day" id="arriv_day" value="'.$arriv_day.'" class="arrivDayCal required" readonly="true" maxlength="10"/><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/scripts/cal.gif" class="calimg" id="arriv_calimg"  /> 
+
+         </td>
+    </tr>
+    <tr>
+        <td>Arrival time<span class="req">*</span>:</td><td style="float:left">';
+       $arriv_hr='';
+       if(isset($cartObj['arriv_hr'])){$arriv_hr=$cartObj['arriv_hr'];}
+       $arriv_mt='';
+       if(isset($cartObj['arriv_mt'])){$arriv_mt=$cartObj['arriv_mt'];}
+       $arriv_meridian='';
+        if(isset($cartObj['arriv_meridian'])){$arriv_meridian=$cartObj['arriv_meridian'];}
+        $arriv_hr_mt='';
+        if($arriv_hr!='' && $arriv_mt!='' && $arriv_meridian!='')
+        {
+            $arriv_hr_mt=$arriv_hr.':'.$arriv_mt.' '.$arriv_meridian;
+        }
+        $Step2cont.='<div id="normalTime"><input readonly="true" type="text" name="arriv_hr_mt" id="arriv_hr_mt" value="'.$arriv_hr_mt.'" class="sliderhrmt"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_hrimg"  /></div>';
+        $Step2cont.='<div id="splTime"><input readonly="true" type="text" name="arriv_hr_mt_day" id="arriv_hr_mt_day" value="'.$arriv_hr_mt.'" class="daysliderhrmt"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_hrimg_day"  /></div>';
+$Step2cont.='</td>
+    </tr>
+    <tr>
+        <td>Airline or Train co<span class="req">*</span>:</td><td style="width: 222px;"><select name="airline" id="airline" class="required"><option value="" selected="selected">Select</option>';
+        $res_airline=db_query("SELECT title from node WHERE type='airline'");
+        foreach ($res_airline as $record) {
+            $airline='';
+            if(isset($cartObj['airline']) && trim($cartObj['airline'])==trim($record->title))
+            {
+                $airline='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$airline.'>'.$record->title.'</option>';
+            
+        }
+        $selected_airline='';
+        if($cartObj['airline']=='Others'){ $selected_airline='selected="selected"'; }
+        $Step2cont.='<option value="Others" '.$selected_airline.'>others</option>';
+        $showDiv='';
+    $airline_OthersTxt='';
+    if(isset($cartObj['airline']) && trim($cartObj['airline'])=='Others')
+    {
+        $showDiv='style="display:block"';
+        $airline_OthersTxt=$cartObj['airline_OthersTxt'];
+    }
+      $Step2cont.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span> If you select "Other", please fill the airline or train details in full text.</span></a>
+         <div id="airline_Others" '.$showDiv.'><textarea id="airline_OthersTxt" name="airline_OthersTxt">'.$airline_OthersTxt.'</textarea></div> 
+        </td>
+    </tr>';
+      $flight_no='';
+        if(isset($cartObj['flight_no'])){$flight_no=$cartObj['flight_no'];}
+    
+   $Step2cont.='<tr>
+        <td>Flight or train number<span class="req">*</span>:</td><td><input type="text" name="flight_no" id="flight_no" class="required" value="'.$flight_no.'" /></td>
+   </tr>
+   <tr>
+        <td>Driver language<span class="req">*</span>:</td><td>
+        <select name="driv_lang" id="driv_lang" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_driv_lang=db_query("SELECT lang.field_driver_language_value as title from node as n left join field_data_field_driver_language as lang on n.nid=lang.entity_id  WHERE n.type='driver_language_by_region'  and n.title='".$srchRegion."'");
+        foreach ($res_driv_lang as $record) {
+            $driv_lang='';
+            if(isset($cartObj['driv_lang']) && trim($cartObj['driv_lang'])==trim($record->title))
+            {
+                $driv_lang='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$driv_lang.'>'.$record->title.'</option>';
+        }
+      $Step2cont.='</select></td>
+   </tr>
+   <tr>
+        <td>Special requests or comments:</td><td><textarea name="spl_comment" id="spl_comment">';
+        if(isset($cartObj['spl_comment']) && trim($cartObj['spl_comment'])!='')
+        {
+            $Step2cont.=trim($cartObj['spl_comment']);
+        }
+      $Step2cont.='</textarea></td>
+   </tr>
+
+</table>
+<div id="addmoreDiv">
+ <table>
+    <tr style="top:border:none;">
+        <td class="clstdfirst">Title<span class="req">*</span>:</td>
+        <td>
+        <select name="surtitle" recname="surtitle" id="surtitle" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_pre_name_title=db_query("SELECT title from node WHERE type='pre_name_title'");
+        foreach ($res_pre_name_title as $record) {
+            $Step2cont.='<option value="'.$record->title.'">'.$record->title.'</option>';
+        }       
+        $Step2cont.='</select>
+	<a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>one main contact minimum is required.</span></a>
+	</td>
+    </tr>
+     <tr>
+        <td class="clstdfirst">First name<span class="req">*</span></td>
+        <td>
+        <input type="text" class="required" name="fname" recname="fname" id="fname" value="" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Last name<span class="req">*</span></td>
+        <td>
+        <input type="text" class="required" name="pasengername" recname="pasengername" id="pasengername" value="" />
+        </td>
+    </tr>
+   
+    <tr>
+        <td class="clstdfirst">Tel Num:</td>
+        <td>
+        <input type="text" name="tnum" recname="tnum" id="tnum" value="" />
+        </td>
+    </tr>
+</table>
+</div>';
+$arr='';
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        $arr.='{surtitle : "'.$cartObj['passengerDetails'][$i]['surtitle'].'"
+            ,pasengername : "'.$cartObj['passengerDetails'][$i]['pasengername'].'",
+            fname : "'.$cartObj['passengerDetails'][$i]['fname'].'",
+            tnum : "'.$cartObj['passengerDetails'][$i]['tnum'].'"
+            }'; 
+        if($i!=count($cartObj['passengerDetails'])-1)
+        $arr.=',';
+    }
+}
+$Step2cont.='<script language="javascript">';   
+if($arr!='')
+{
+    $cntarr=count($cartObj['passengerDetails'])-1;
+$Step2cont.='jQuery("#addmoreDiv").EnableMultiField({ data:['.$arr.'] });';
+$Step2cont.="addmoreArray=['surtitle_".$cntarr."', 'pasengername_".$cntarr."','fname_".$cntarr."'];";
+$Step2cont.="jQuery('.removeFields').trigger('click');";
+}
+else{
+$Step2cont.='jQuery("#addmoreDiv").EnableMultiField();';
+}
+$Step2cont.='</script>';
+$Step2cont.='<table>
+    <tr>
+        <td class="clstdfirst">Destination address<span class="req">*</span>:</td>
+        <td> <select name="dest_addr" id="dest_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$srchRegion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $dest_addr='';
+            if(isset($cartObj['dest_addr']) && trim($cartObj['dest_addr'])==trim($record->title))
+            {
+                $dest_addr='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$dest_addr.'>'.$record->title.'</option>';
+        }
+	if($cartObj['dest_addr'] == "Other"){
+		$dest_addr='selected="selected"';
+	}
+	    $Step2cont.='<option value="Others" '.$dest_addr.'>others</option>';
+        $showDiv='';
+        $dest_addr_OthersTxt='';
+        if(isset($cartObj['dest_addr']) && trim($cartObj['dest_addr'])!='')
+        {
+            $showDiv='style="display: table-row"';
+            $dest_addr_OthersTxt=$cartObj['dest_addr_OthersTxt'];
+        }
+        $Step2cont.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>When a destination address is then chooses the correct address is displayed outside the drop down. And if the user selects Other from the drop down, then input that appears to the user enters the correct address.</span></a><br/><br/></td>
+    </tr>
+    <tr id="dest_addr_Others" '.$showDiv.'>
+        <td class="clstdfirst"></td>
+        <td><textarea id="dest_addr_OthersTxt" name="dest_addr_OthersTxt" cols="22">'.$dest_addr_OthersTxt.'</textarea><br/><br/></td>
+    </tr>   
+</table>';
+    if($typeTransfer!='in&out')
+    {
+    //$Step2cont.='<input type="submit" class="submit" value="Submit"/>';
+    $Step2cont.='<span id="submitTrav">Submit</span><input type="hidden" name="hid_reload" id="hid_reload" value="N"/>';
+    }
+    $Step2cont.='</fieldset>';
+      
+    }
+    if($typeTransfer=='out' || $typeTransfer=='in&out')
+    { 
+     $cartObj=array();
+     $srchRegion='';
+     $defaultAirline='';
+     $defaultAirlineTxt='';
+     if($typeTransfer=='in&out')
+     {
+         if(isset($cart[$nid]['product_details'][$type]['out']))
+         $cartObj=$cart[$nid]['product_details'][$type]['out'];
+         
+         $srchRegion=$cart[$nid]['product_details'][$type]['srch']['selectregion'];
+         $defaultAirline=$cart[$nid]['product_details'][$type]['in']['airline'];
+         $defaultAirlineTxt=$cart[$nid]['product_details'][$type]['in']['airline_OthersTxt'];
+     }
+     else
+     {
+     $cartObj=$cart[$nid]['product_details'][$type]; 
+     $srchRegion=$cartObj['srch']['selectregion'];
+     }
+        
+     $step_id='step_1';
+     if($typeTransfer=='in&out')
+     $step_id='step_2';   
+        
+      $Step2cont.='<fieldset class="sectionwrap" id="'.$step_id.'">
+<legend>Travel Information Out</legend>
+<table>';
+      /*if($typeTransfer!='in&out' && $typeTransfer!='Commute')
+      {*/
+     $Step2cont.='<tr>
+        <td colspan="2"><div class="cartErrMsg"> Departure time Between 8:00 PM & 7:00 AM </div>
+        <div class="calMsg"> <span class="tick">✓</span>A night rate applies between 8.00pm and 7.00am. </div></td>
+        </tr>';
+       // }
+          
+    $Step2cont.='<tr style="top:border:none;">
+         <td>Day of Service<span class="req">*</span>:</td><td class="clsplsecond">';
+      $serv_day='';
+        if(isset($cartObj['serv_day'])){$serv_day=$cartObj['serv_day'];}
+         $Step2cont.='<input type="text" name="serv_day" id="serv_day" value="'.$serv_day.'" class="servDayCal required" readonly="true" maxlength="10"/><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/scripts/cal.gif" class="calimg" id="serv_calimg"  /> 
+         </td>
+    </tr>    
+    <tr>
+        <td class="clstdfirst">Pickup Address<span class="req">*</span>:</td>
+        <td> <select name="pickout_addr" id="pickout_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$srchRegion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $pickout_addr='';
+            if(isset($cartObj['pickout_addr']) && trim($cartObj['pickout_addr'])==trim($record->title))
+            {
+                $pickout_addr='selected="selected"';
+            }
+            
+            $Step2cont.='<option value="'.$record->title.'" '.$pickout_addr.'>'.$record->title.'</option>';
+        }
+        $selected_pickout_addr='';  
+        $showDiv='style="display:block"';
+        if($cartObj['pickout_addr']=='')
+        {
+            $showDiv='';
+        }
+        if($cartObj['pickout_addr']=='Others')
+        {
+         $selected_pickout_addr='selected="selected"';
+        }
+        $pickout_addrTxt='';
+        if(isset($cartObj['pickout_addrTxt']) && trim($cartObj['pickout_addrTxt'])!='')
+        {
+            $pickout_addrTxt=trim($cartObj['pickout_addrTxt']);
+        }
+        
+        $Step2cont.='<option value="Others" '.$selected_pickout_addr.'>others</option>';
+        $Step2cont.='</select><a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If you select "Other", please fill the address details in full text.</span></a>
+       <div id="pickout_addr_Others" '.$showDiv.'><textarea name="pickout_addrTxt" id="pickout_addrTxt">'.$pickout_addrTxt.'</textarea></div></td>';
+        
+     $Step2cont.='</tr>    
+    <tr>
+        <td class="clstdfirst">Airport or train station of departure<span class="req">*</span>:</td>
+        <td>
+        <select name="airport_dept" id="airport_dept" class="required">
+        <option value="" selected="selected">Select</option>';
+        $airport_dept='';
+        if(isset($cartObj['airport_dept'])){$airport_dept=$cartObj['airport_dept'];}
+        foreach ($res_flight_dest as $record) {
+            $selected_airport_dept='';
+            if($airport_dept==trim($record->title." (".$record->code.")")){$selected_airport_dept.='selected="selected"';}  
+            $Step2cont.='<option value="'.$record->title.' ('.$record->code.')" '.$selected_airport_dept.'>'.$record->title.' ('.$record->code.')</option>';
+        }
+        $selected_airport_dept='';
+        if($cartObj['airport_dept'] == "others"){
+            $selected_airport_dept='selected="selected"';
+	}
+        $airport_dept_OthersTxt='';
+        $showDiv='';
+        if(isset($cartObj['airport_dept']) && trim($cartObj['airport_dept'])=='others')
+        {
+            $showDiv='style="display:block"';
+            $airport_dept_OthersTxt=$cartObj['airport_dept_OthersTxt'];
+        }
+        $Step2cont.='<option value="others" '.$selected_airport_dept.'>others</option>';
+      $Step2cont.='</select><a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If you select "Other", please fill the airline or train details in full text.</span></a>
+       <div id="airport_dept_Others" '.$showDiv.'><textarea name="airport_dept_OthersTxt" id="airport_dept_OthersTxt">'.$airport_dept_OthersTxt.'</textarea></div>
+         </td>
+    </tr>
+    <tr>
+        <td>Airline or Train co<span class="req">*</span>:</td><td style="width: 222px;"><select name="airlineout" id="airlineout" class="required"><option value="" selected="selected">Select</option>';
+        $res_airline=db_query("SELECT title from node WHERE type='airline'");
+        foreach ($res_airline as $record) {
+            $airlineout='';
+            if(isset($cartObj['airlineout']) && trim($cartObj['airlineout'])==trim($record->title))
+            {
+                $airlineout='selected="selected"';
+            }            
+            $Step2cont.='<option value="'.$record->title.'" '.$airlineout.'>'.$record->title.'</option>';
+        }
+        $showDiv='';
+        $airlineout_OthersTxt='';
+        $selected_airlineout='';
+        if(isset($cartObj['airlineout_OthersTxt']) && trim($cartObj['airlineout'])=='Others')
+        {
+            $showDiv='style="display:block"';
+            $airlineout_OthersTxt=trim($cartObj['airlineout_OthersTxt']);
+            $selected_airlineout='selected="selected"';
+        }
+        elseif(trim($defaultAirline)=='Others')
+        {
+            $showDiv='style="display:block"';
+            $airlineout_OthersTxt=trim($defaultAirlineTxt);
+        }
+        
+        
+        
+        $Step2cont.='<option value="Others" '.$selected_airlineout.'>others</option>';
+      $Step2cont.='</select> <a class="infoIcon2"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If you select "Other", please fill the airline or train details in full text.</span></a>
+        <div id="airlineout_Others" '.$showDiv.'><textarea id="airlineout_OthersTxt" name="airlineout_OthersTxt">'.$airlineout_OthersTxt.'</textarea></div>     
+    </td>
+    </tr>
+    <tr>';
+     $flight_no_out='';
+        if(isset($cartObj['flight_no_out'])){$flight_no_out=$cartObj['flight_no_out'];}
+      $Step2cont.='<td>Flight or train number<span class="req">*</span>:</td><td><input type="text" name="flight_no_out" id="flight_no_out" class="required" value="'.$flight_no_out.'" /></td>
+   </tr>
+    <tr>
+        <td>Departure time<span class="req">*</span>:</td><td style="float:left">';
+      
+       $decol_hr_out='';
+       if(isset($cartObj['decol_hr_out'])){$decol_hr_out=$cartObj['decol_hr_out'];}       
+       $decol_mt_out='';
+       if(isset($cartObj['decol_mt_out'])){$decol_mt_out=$cartObj['decol_mt_out'];}      
+       $decol_meridian_out='';
+       if(isset($cartObj['decol_meridian_out'])){$decol_meridian_out=$cartObj['decol_meridian_out'];}   
+       $decolout_hr_mt='';
+        if($decol_hr_out!='' && $decol_mt_out!='' && $decol_meridian_out!='')
+        {
+            $decolout_hr_mt=$decol_hr_out.':'.$decol_mt_out.' '.$decol_meridian_out;
+        }
+        if($typeTransfer!='in&out' && $typeTransfer!='Commute')
+        {
+            $Step2cont.='<div id="normalTimeOut"><input readonly="true" type="text" name="decolout_hr_mt" id="decolout_hr_mt" value="'.$decolout_hr_mt.'" class="sliderhrmt required"/>';
+            $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="decolout_hrimg"  /></div>';
+            $Step2cont.='<div id="splTimeOut"><input readonly="true" type="text" name="decolout_hr_mt_day" id="decolout_hr_mt_day" value="'.$decolout_hr_mt.'" class="daysliderhrmt"/>';
+            $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_hrimg_day"  /></div>';
+        }
+        else
+        {
+            $Step2cont.='<input readonly="true" type="text" name="decolout_hr_mt" id="decolout_hr_mt" value="'.$decolout_hr_mt.'" class="sliderhrmt required"/>';
+            $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="decolout_hrimg"  /> ';
+        }
+       
+$Step2cont.='</td>
+    </tr>
+    <tr>
+        <td>Pickup Hour<span class="req">*</span>:</td><td style="float:left">';
+        $pickup_hr='';
+        if(isset($cartObj['pickup_hr']) && trim($cartObj['pickup_hr'])!='')
+        {
+            $pickup_hr=trim($cartObj['pickup_hr']);
+        }  
+        $pickup_mt='';
+        if(isset($cartObj['pickup_mt']) && trim($cartObj['pickup_mt'])!='')
+        {
+            $pickup_mt=trim($cartObj['pickup_mt']);
+        } 
+        $pickup_meridian='';
+        if(isset($cartObj['pickup_meridian'])){$pickup_meridian=$cartObj['pickup_meridian'];} 
+        $pickout_hr_mt='';
+        if($pickup_hr!='' && $pickup_mt!='' && $pickup_meridian!='')
+        {
+            $pickout_hr_mt=$pickup_hr.':'.$pickup_mt.' '.$pickup_meridian;
+        }
+        $Step2cont.='<input readonly="true" type="text" name="pickout_hr_mt" id="pickout_hr_mt" value="'.$pickout_hr_mt.'" class="sliderhrmt required"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="pickout_hrimg"  />
+</td>
+    </tr>    
+    <tr>
+        <td class="clstdfirst">Drop off address<span class="req">*</span>:</td>
+        <td> <select name="dropoffout_addr" id="dropoffout_addr" class="required">
+         <option value="" selected="selected">Select</option>';
+        $res_drop_off_address=db_query("SELECT n.title from node as n, field_data_field_drop_hotelregion as r
+           WHERE n.type='drop_off_address' and n.nid=r.entity_id and r.field_drop_hotelregion_value='".$srchRegion."' ORDER BY n.title");
+        foreach ($res_drop_off_address as $record) {
+            $dropoffout_addr='';
+            if(isset($cartObj['dropoffout_addr']) && trim($cartObj['dropoffout_addr'])==trim($record->title))
+            {
+                $dropoffout_addr='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$dropoffout_addr.'>'.$record->title.'</option>';
+        }
+        if($cartObj['dropoffout_addr'] == "Others"){
+		$dropoffout_addr='selected="selected"';
+	}
+	$Step2cont.='<option value="Others" '.$dropoffout_addr.'>others</option>';
+        $showDiv='';
+        $dropoffout_addrTxt='';
+        if(isset($cartObj['dropoffout_addrTxt']) && trim($cartObj['dropoffout_addr'])=='Others')
+        {
+            $showDiv='style="display:block"';
+            $dropoffout_addrTxt=trim($cartObj['dropoffout_addrTxt']);
+        }
+        
+        $Step2cont.='</select><a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If you select "Other", please fill the address in full text.</span></a>
+        <div id="dropoffout_addr_Others" '.$showDiv.'><textarea id="dropoffout_addrTxt" name="dropoffout_addrTxt">'.$dropoffout_addrTxt.'</textarea></div>     
+    </td>
+   </tr> 
+   <tr>
+        <td>Driver language<span class="req">*</span>:</td><td>
+        <select name="driv_lang_out" id="driv_lang_out" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_driv_lang=db_query("SELECT lang.field_driver_language_value as title from node as n left join field_data_field_driver_language as lang on n.nid=lang.entity_id  WHERE n.type='driver_language_by_region'  and n.title='".$srchRegion."'");
+        foreach ($res_driv_lang as $record) {
+            $driv_lang_out='';
+            if(isset($cartObj['driv_lang_out']) && trim($cartObj['driv_lang_out'])==trim($record->title))
+            {
+                $driv_lang_out='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$driv_lang_out.'>'.$record->title.'</option>';
+        }
+      $Step2cont.='</select></td>
+   </tr>
+   <tr>';
+      $spl_comment_out='';
+            if(isset($cartObj['spl_comment_out']) && trim($cartObj['spl_comment_out'])!='')
+            {
+                $spl_comment_out=trim($cartObj['spl_comment_out']);
+            }
+  $Step2cont.='<td>Special requests or comments:</td><td><textarea name="spl_comment_out" id="spl_comment_out">'.$spl_comment_out.'</textarea></td>
+   </tr>
+
+</table>
+<div id="addmoreoutDiv">
+ <table>
+    <tr style="top:border:none;">
+        <td class="clstdfirst">Title<span class="req">*</span>:</td>
+        <td>
+        <select name="surtitle_out" id="surtitle_out" class="required">
+        <option value="" selected="selected">Select</option>';
+       $res_pre_name_title=db_query("SELECT title from node WHERE type='pre_name_title'");
+        foreach ($res_pre_name_title as $record) {
+            $Step2cont.='<option value="'.$record->title.'">'.$record->title.'</option>';
+        }       
+        $Step2cont.='</select>
+            <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>one main contact minimum is required.</span></a>
+            </td>
+    </tr>
+    
+    <tr>
+        <td class="clstdfirst">First name<span class="req">*</span></td>
+        <td>
+        <input type="text" class="required" name="fname_out" id="fname_out" value="" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Last name<span class="req">*</span></td>
+        <td>
+        <input type="text" class="required" name="pasengername_out" id="pasengername_out" value="" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Tel Num:</td>
+        <td>
+        <input type="text" name="tnum_out" id="tnum_out" value="" />
+        </td>
+    </tr>
+</table>
+</div>
+<table>';
+ $arr='';
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        $arr.='{surtitle_out: "'.$cartObj['passengerDetails'][$i]['surtitle_out'].'"
+            ,pasengername_out: "'.$cartObj['passengerDetails'][$i]['pasengername_out'].'",
+            fname_out: "'.$cartObj['passengerDetails'][$i]['fname_out'].'",
+            tnum_out: "'.$cartObj['passengerDetails'][$i]['tnum_out'].'"
+            }'; 
+        if($i!=count($cartObj['passengerDetails'])-1)
+        $arr.=',';
+    }
+}
+$Step2cont.='<script language="javascript">';   
+if($arr!='')
+{
+$cntarr=count($cartObj['passengerDetails'])-1;
+$Step2cont.='jQuery("#addmoreoutDiv").EnableMultiField({ data:['.$arr.'] });';
+$Step2cont.="addmoreoutArray=['surtitle_out_".$cntarr."', 'pasengername_out_".$cntarr."','fname_out_".$cntarr."'];";
+$Step2cont.="jQuery('.removeFields').trigger('click');";
+}
+else{
+$Step2cont.='jQuery("#addmoreoutDiv").EnableMultiField();';
+}
+//$Step2cont.='</script>'; 
+
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {  
+        $ind=$i-1;
+        $apptxt='';
+        if($ind>-1)
+        {
+           $apptxt='_'.$ind;
+        }
+       
+$Step2cont.='jQuery("#surtitle_out'.$apptxt.'").val("'.$cartObj['passengerDetails'][$i]['surtitle_out'].'");';
+$Step2cont.='jQuery("#pasengername_out'.$apptxt.'").val("'.$cartObj['passengerDetails'][$i]['pasengername_out'].'");';
+$Step2cont.='jQuery("#fname_out'.$apptxt.'").val("'.$cartObj['passengerDetails'][$i]['fname_out'].'");';
+$Step2cont.='jQuery("#tnum_out'.$apptxt.'").val("'.$cartObj['passengerDetails'][$i]['tnum_out'].'");';
+        
+    }
+}
+$Step2cont.='</script>'; 
+      
+$Step2cont.='</table>
+<!--<input type="submit" class="submit" value="Submit"/>-->
+<span id="submitTrav">Submit</span><input type="hidden" name="hid_reload" id="hid_reload" value="N"/>
+</fieldset>';
+  
+    }
+  
+    }
+    elseif($node->type=='meet_greet')
+    {
+   
+    $typeTransfer=$arg2;
+    $type=$arg2; 
+    $cart = unserialize($_SESSION['products']); 
+    $Step2cont='';
+    $srchRegion='';
+    
+    
+    
+    
+    if($typeTransfer=='IN' || $typeTransfer=='Commute')
+    {
+        $cartObj=array();
+        if($typeTransfer=='Commute'){
+            if(isset($cart[$nid]['product_details'][$type]['IN']))
+            $cartObj=$cart[$nid]['product_details'][$type]['IN'];
+            $srchRegion=$cart[$nid]['product_details'][$type]['srch']['selectregion'];
+        }
+        else
+        {
+            $cartObj=$cart[$nid]['product_details'][$type]; 
+            $srchRegion=$cartObj['srch']['selectregion'];
+        }
+        
+       $Step2cont.='<fieldset class="sectionwrap" id="step_1">
+<legend>Travel Information In</legend>
+<table>
+<tr>
+<td colspan="2"><div class="cartErrMsg"> Arrival time Between 8:00 PM & 7:00 AM </div></td>
+</tr>
+    <tr>
+        <td class="clstdfirst">Airport or train station of Arrival<span class="req">*</span>:</td>
+        <td>
+        <select name="ariport_origin" id="ariport_origin" class="required">
+        <option value="" selected="selected">Select</option>';
+       $ariport_origin='';
+        if(isset($cartObj['ariport_origin'])){$ariport_origin=$cartObj['ariport_origin'];}
+        foreach ($res as $record) {
+            $selected_ariport_origin='';
+            if($ariport_origin==trim($record->title." (".$record->code.")")){$selected_ariport_origin.='selected="selected"';}  
+            $Step2cont.='<option value="'.$record->title.' ('.$record->code.')" '.$selected_ariport_origin.'>'.$record->title.' ('.$record->code.')</option>';
+        }
+      $Step2cont.='</select></td>
+    </tr>
+    <tr>
+        <td>Day of Arrival<span class="req">*</span>:</td><td class="clsplsecond">';
+        $arriv_day='';
+        if(isset($cartObj['arriv_day'])){$arriv_day=$cartObj['arriv_day'];}
+         $Step2cont.='<input type="text" name="arriv_day" id="arriv_day" value="'.$arriv_day.'" class="arrivDayCal required" readonly="true" maxlength="10"/><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/scripts/cal.gif" class="calimg" id="arriv_calimg"  /> 
+         </td>
+    </tr>
+     <tr>
+        <td>Arrival time<span class="req">*</span>:</td><td style="float:left">';
+       $arriv_hr='';
+       if(isset($cartObj['arriv_hr'])){$arriv_hr=$cartObj['arriv_hr'];}
+       $arriv_mt='';
+       if(isset($cartObj['arriv_mt'])){$arriv_mt=$cartObj['arriv_mt'];}
+       $arriv_meridian='';
+        if(isset($cartObj['arriv_meridian'])){$arriv_meridian=$cartObj['arriv_meridian'];}
+        $arriv_hr_mt='';
+        if($arriv_hr!='' && $arriv_mt!='' && $arriv_meridian!='')
+        {
+        $arriv_hr_mt=$arriv_hr.':'.$arriv_mt.' '.$arriv_meridian;
+        }
+        $Step2cont.='<div id="normalTime"><input readonly="true" type="text" name="arriv_hr_mt" id="arriv_hr_mt" value="'.$arriv_hr_mt.'" class="sliderhrmt"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_hrimg"  /></div>';
+        $Step2cont.='<div id="splTime"><input readonly="true" type="text" name="arriv_hr_mt_day" id="arriv_hr_mt_day" value="'.$arriv_hr_mt.'" class="daysliderhrmt"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_hrimg_day"  /></div>';
+$Step2cont.='</td>
+    </tr>
+    <tr>
+        <td>Airline<span class="req">*</span>:</td><td style="width: 222px;"><select name="airline" id="airline" class="required"><option value="" selected="selected">Select</option>';
+        $res_airline=db_query("SELECT title from node WHERE type='airline'");
+        foreach ($res_airline as $record) {
+            $airline='';
+            if(isset($cartObj['airline']) && trim($cartObj['airline'])==trim($record->title))
+            {
+                $airline='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$airline.'>'.$record->title.'</option>';
+            
+        }
+        $showDiv='';
+        $airline_OthersTxt='';
+        if(isset($cartObj['airline']) && trim($cartObj['airline'])=='Others')
+        {
+            $showDiv='style="display:block"';
+            $airline_OthersTxt=$cartObj['airline_OthersTxt'];
+        }
+      $Step2cont.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If "Other" is selected, then input appears to be filled.</span></a>
+      <div id="airline_Others" '.$showDiv.'><textarea id="airline_OthersTxt" name="airline_OthersTxt">'.$airline_OthersTxt.'</textarea></div>    
+
+    </td>
+    </tr>';
+      $flight_no='';
+      if(isset($cartObj['flight_no'])){$flight_no=$cartObj['flight_no'];}
+   $Step2cont.='<tr>
+        <td>Flight number<span class="req">*</span>:</td><td><input type="text" name="flight_no" id="flight_no" class="required" value="'.$flight_no.'" /></td>
+   </tr> 
+   <tr>
+        <td>Language of the hostess<span class="req">*</span>:</td><td>
+        <select name="driv_lang" id="driv_lang" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_driv_lang=db_query("SELECT lang.field_driver_language_value as title from node as n left join field_data_field_driver_language as lang on n.nid=lang.entity_id  WHERE n.type='driver_language_by_region'  and n.title='".$srchRegion."'");
+        foreach ($res_driv_lang as $record) {
+            $driv_lang='';
+            if(isset($cartObj['driv_lang']) && trim($cartObj['driv_lang'])==trim($record->title))
+            {
+                $driv_lang='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$driv_lang.'>'.$record->title.'</option>';
+        }
+      $Step2cont.='</select></td>
+   </tr>
+   <tr>
+        <td>Special requests or comments:</td><td><textarea name="spl_comment" id="spl_comment">';
+        if(isset($cartObj['spl_comment']) && trim($cartObj['spl_comment'])!='')
+        {
+            $Step2cont.=trim($cartObj['spl_comment']);
+        }
+      $Step2cont.='</textarea></td>
+   </tr>
+
+</table>
+<div id="addmoreDiv">
+ <table>
+    <tr style="top:border:none;">
+        <td class="clstdfirst">Title<span class="req">*</span>:</td>
+        <td>
+        <select name="surtitle" id="surtitle" class="required">
+        <option value="" selected="selected">Select</option>';
+      $res_pre_name_title=db_query("SELECT title from node WHERE type='pre_name_title'");
+        foreach ($res_pre_name_title as $record) {
+            $Step2cont.='<option value="'.$record->title.'">'.$record->title.'</option>';
+        }       
+        $Step2cont.='</select>&nbsp;<a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>one main contact minimum is required.</span></td>
+    </tr>    
+    <tr>
+        <td class="clstdfirst">First name<span class="req">*</span></td>
+        <td>
+        <input type="text" name="fname" id="fname" value="" class="required" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Last name<span class="req">*</span></td>
+        <td>
+        <input type="text" name="pasengername" id="pasengername" value="" class="required" />
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Tel Num:</td>
+        <td>
+        <input type="text" name="tnum" id="tnum" value="" />
+        </td>
+    </tr>
+</table>
+</div>';
+$arr='';
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        $arr.='{surtitle : "'.$cartObj['passengerDetails'][$i]['surtitle'].'"
+            ,pasengername : "'.$cartObj['passengerDetails'][$i]['pasengername'].'",
+            fname : "'.$cartObj['passengerDetails'][$i]['fname'].'",
+            tnum : "'.$cartObj['passengerDetails'][$i]['tnum'].'"
+            }';         
+        if($i!=count($cartObj['passengerDetails'])-1)
+        $arr.=',';
+    }
+}
+$Step2cont.='<script language="javascript">';   
+if($arr!='')
+{
+    $cntarr=count($cartObj['passengerDetails'])-1;
+$Step2cont.='jQuery("#addmoreDiv").EnableMultiField({ data:['.$arr.'] });';
+$Step2cont.="addmoreArray=['surtitle_".$cntarr."', 'pasengername_".$cntarr."','fname_".$cntarr."'];";
+$Step2cont.="jQuery('.removeFields').trigger('click');";
+}
+else{
+$Step2cont.='jQuery("#addmoreDiv").EnableMultiField();';
+}
+
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        if($i==0)
+        {
+            $Step2cont.='jQuery("#surtitle").val("'.$cartObj['passengerDetails'][$i]['surtitle'].'");';
+            $Step2cont.='jQuery("#pasengername").val("'.$cartObj['passengerDetails'][$i]['pasengername'].'");';
+            $Step2cont.='jQuery("#fname").val("'.$cartObj['passengerDetails'][$i]['fname'].'");';
+            $Step2cont.='jQuery("#tnum").val("'.$cartObj['passengerDetails'][$i]['tnum'].'");';
+        }
+        else {
+           $Step2cont.='jQuery("#surtitle_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['surtitle'].'");'; 
+           $Step2cont.='jQuery("#pasengername_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['pasengername'].'");'; 
+           $Step2cont.='jQuery("#fname_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['fname'].'");'; 
+           $Step2cont.='jQuery("#tnum_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['tnum'].'");'; 
+        }
+    }
+}
+
+$Step2cont.='</script>';
+$Step2cont.='<table>    
+      <tr>
+        <td colspan="2" class="spreq">All fields are mandatory except special request and Tel.</td>
+    </tr>
+</table>';
+
+
+if($typeTransfer!='Commute')
+{
+//$Step2cont.='<input type="submit" class="submit" value="Submit"/>';
+ $Step2cont.='<span id="submitTrav">Submit</span><input type="hidden" name="hid_reload" id="hid_reload" value="N"/>';
+}
+$Step2cont.='</fieldset>';
+    }
+    if($typeTransfer=='Out' || $typeTransfer=='Commute')
+    { 
+     $cartObj=array();
+     $defaultAirline=''; 
+     $defaultAirlineTxt='';
+     $srchRegion='';
+     
+     if($typeTransfer=='Commute') 
+     {
+        $step_id='step_2';
+        if(isset($cart[$nid]['product_details'][$type]['Out']))
+        $cartObj=$cart[$nid]['product_details'][$type]['Out'];
+        
+        $srchRegion=$cart[$nid]['product_details'][$type]['srch']['selectregion'];
+        
+        $defaultAirline=$cart[$nid]['product_details'][$type]['IN']['airline'];
+        $defaultAirlineTxt=$cart[$nid]['product_details'][$type]['IN']['airline_OthersTxt'];
+     }
+     else
+     {
+     $step_id='step_1';     
+     $cartObj=$cart[$nid]['product_details'][$type];
+     $srchRegion=$cartObj['srch']['selectregion'];
+     }
+     
+     $Step2cont.='<fieldset class="sectionwrap" id="'.$step_id.'">
+<legend>Travel Information Out</legend>
+<table>
+     <tr>
+        <td>Day of service<span class="req">*</span>:</td><td class="clsplsecond">';
+        $serv_day='';
+        if(isset($cartObj['serv_day'])){$serv_day=$cartObj['serv_day'];}
+         $Step2cont.='<input type="text" name="serv_day" id="serv_day" value="'.$serv_day.'" class="servDayCal required" readonly="true" maxlength="10"/><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/scripts/cal.gif" class="calimg" id="serv_calimg"  /> 
+         </td>
+    </tr>
+     <tr>
+        <td>Airline<span class="req">*</span>:</td><td style="width: 222px;"><select name="airlineout" id="airlineout" class="required"><option value="" selected="selected">Select</option>';
+        $res_airline=db_query("SELECT title from node WHERE type='airline'");
+        foreach ($res_airline as $record) {
+            $airlineout='';
+            if(isset($cartObj['airlineout']) && trim($cartObj['airlineout'])==trim($record->title))
+            {
+                $airlineout='selected="selected"';
+            }
+            elseif($defaultAirline!='' && trim($defaultAirline)==trim($record->title) )
+            {
+                $airlineout='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$airlineout.'>'.$record->title.'</option>';
+        }
+        $showDiv='';
+        $airlineout_OthersTxt='';
+        if(isset($cartObj['airlineout_OthersTxt']) && trim($cartObj['airlineout'])=='Others')
+        {
+            $showDiv='style="display:block"';
+            $airlineout_OthersTxt=trim($cartObj['airlineout_OthersTxt']);
+        }
+        elseif(trim($defaultAirline)=='Others')
+        {
+            $showDiv='style="display:block"';
+            $airlineout_OthersTxt=trim($defaultAirlineTxt);
+        }
+        
+      $Step2cont.='</select> <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If "Other" is selected, then input appears to be filled.</span></a>
+     <div id="airlineout_Others" '.$showDiv.'><textarea name="airlineout_OthersTxt" id="airlineout_OthersTxt">'.$airlineout_OthersTxt.'</textarea></div>
+    </td>
+    </tr>';
+    
+     $Step2cont.='
+         <tr>
+        <td class="clstdfirst">Flight destination<span class="req">*</span>:</td>
+        <td>
+        <select name="airport_dept" id="airport_dept" class="required">
+        <option value="" selected="selected">Select</option>';      
+        if(isset($cartObj['airport_dept'])){$airport_dept=$cartObj['airport_dept'];}
+        foreach ($res_flight_dest as $record) {
+            $selected_airport_dept='';
+            if($airport_dept==trim($record->title." (".$record->code.")")){$selected_airport_dept.='selected="selected"';}  
+            $Step2cont.='<option value="'.$record->title.' ('.$record->code.')" '.$selected_airport_dept.'>'.$record->title.' ('.$record->code.')</option>';
+        }
+        $selected_airport_dept='';
+        if($cartObj['airport_dept'] == "others"){
+            $selected_airport_dept='selected="selected"';
+	}
+        $airport_dept_OthersTxt='';
+        if(isset($cartObj['airport_dept']) && trim($cartObj['airport_dept'])=='others')
+        {
+            $showDiv='style="display:block"';
+            $airport_dept_OthersTxt=$cartObj['airport_dept_OthersTxt'];
+        }
+        $Step2cont.='<option value="others" '.$selected_airport_dept.'>others</option>';
+      $Step2cont.='</select><a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>If "Other" is selected, then input appears to be filled.</span></a>
+     <div id="airport_dept_Others" '.$showDiv.'><textarea name="airport_dept_OthersTxt" id="airport_dept_OthersTxt">'.$airport_dept_OthersTxt.'</textarea></div>
+     </td>
+    </tr>   
+    <tr>
+        <td>Flight departure time<span class="req">*</span>:</td><td style="float:left">';
+        $arriv_hr='';
+        if(isset($cartObj['arrivout_hr'])){$arriv_hr=$cartObj['arrivout_hr'];}
+        $arriv_mt='';
+        if(isset($cartObj['arrivout_mt'])){$arriv_mt=$cartObj['arrivout_mt'];}
+        $arriv_meridian='';
+        if(isset($cartObj['arrivout_meridian'])){$arriv_meridian=$cartObj['arrivout_meridian'];}
+        $arrivout_hr_mt='';
+        if($arriv_hr!='' && $arriv_mt!='' && $arriv_meridian!='')
+        {
+        $arrivout_hr_mt=$arriv_hr.':'.$arriv_mt.' '.$arriv_meridian;
+        }
+        $Step2cont.='<input readonly="true" type="text" name="arrivout_hr_mt" id="arrivout_hr_mt" value="'.$arrivout_hr_mt.'" class="sliderhrmt required"/>';
+        $Step2cont.='<img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arrivout_hrimg"  />   
+</td>
+    </tr>
+   <tr>';
+    $flight_no_out='';
+    if(isset($cartObj['flight_no_out'])){$flight_no_out=$cartObj['flight_no_out'];}
+    $Step2cont.='<td>Flight number<span class="req">*</span>:</td><td><input type="text" name="flight_no_out" id="flight_no_out" class="required" value="'.$flight_no_out.'" /></td>
+   </tr>
+  <!-- <tr>-->';
+    $decol_shed='';
+    if(isset($cartObj['decol_shed'])){ $decol_shed=$cartObj['decol_shed']; }
+      $Step2cont.='<!--<td>Decolage schedule<span class="req">*</span>:</td><td><input type="text" name="decol_shed" id="decol_shed" class="required" value="'.$decol_shed.'" /></td>
+   </tr>-->
+   <tr>';
+      $arriv_estim_tm='';
+    if(isset($cartObj['arriv_estim_tm'])){ $arriv_estim_tm=$cartObj['arriv_estim_tm']; }
+        $Step2cont.='<td>Estimated time of arrival at the airport<span class="req">*</span>:</td><td><input readonly="true" class="sliderhrmt" type="text" name="arriv_estim_tm" id="arriv_estim_tm" class="required" value="'.$arriv_estim_tm.'"/><img src="'.drupal_get_path('theme', 'privatetransfer_theme').'/images/clock.png" class="calimg" id="arriv_estim_tmimg"  />    <a class="infoIcon"><img class="infoIcon" src="/sites/all/themes/privatetransfer_theme/images/info_icon.png" /><span>Attention: for any international flight, plan to be at airport 2 hours prior departure</span></a></td>
+   </tr>
+   <tr>
+        <td>Hostess language<span class="req">*</span>:</td><td>
+        <select name="driv_lang_out" id="driv_lang_out" class="required">
+        <option value="" selected="selected">Select</option>';
+        $res_driv_lang=db_query("SELECT lang.field_driver_language_value as title from node as n left join field_data_field_driver_language as lang on n.nid=lang.entity_id  WHERE n.type='driver_language_by_region'  and n.title='".$srchRegion."'");
+        foreach ($res_driv_lang as $record) {
+            $driv_lang_out='';
+            if(isset($cartObj['driv_lang_out']) && trim($cartObj['driv_lang_out'])==trim($record->title))
+            {
+                $driv_lang_out='selected="selected"';
+            }
+            $Step2cont.='<option value="'.$record->title.'" '.$driv_lang_out.'>'.$record->title.'</option>';
+        }
+      $Step2cont.='</select></td>
+   </tr>
+   <tr>';
+         $spl_comment_out='';
+            if(isset($cartObj['spl_comment_out']) && trim($cartObj['spl_comment_out'])!='')
+            {
+                $spl_comment_out=trim($cartObj['spl_comment_out']);
+            }
+  $Step2cont.='<td>Special requests or comments:</td><td><textarea name="spl_comment_out" id="spl_comment_out">'.$spl_comment_out.'</textarea></td>
+   </tr>
+
+</table>
+<div id="addmoreoutDiv">
+ <table>
+    <tr style="top:border:none;">
+        <td class="clstdfirst">Title<span class="req">*</span>:</td>
+        <td>
+        <select name="surtitle_out" id="surtitle_out" class="required">
+        <option value="" selected="selected">Select</option>';
+       $res_pre_name_title=db_query("SELECT title from node WHERE type='pre_name_title'");
+        foreach ($res_pre_name_title as $record) {
+            $Step2cont.='<option value="'.$record->title.'">'.$record->title.'</option>';
+        }       
+        $Step2cont.='</select>
+            <a class="infoIcon"><img  src="/sites/all/themes/privatetransfer_theme/images/info_icon.png"/> <span>one main contact minimum is required.</span></a>
+            </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">First name<span class="req">*</span></td>
+        <td>
+        <input type="text" name="fname_out" id="fname_out" value="" class="required"/>
+        </td>
+    </tr>
+    <tr>
+        <td class="clstdfirst">Last name<span class="req">*</span></td>
+        <td>
+        <input type="text" name="pasengername_out" id="pasengername_out" value="" class="required"/>
+        </td>
+    </tr>
+    
+    <tr>
+        <td class="clstdfirst">Tel Num:</td>
+        <td>
+        <input type="text" name="tnum_out" id="tnum_out" value="" />
+        </td>
+    </tr>
+</table>
+</div>
+<table>   
+      <tr>
+        <td colspan="2">All fields are mandatory except special request and Tel.</td>
+    </tr>
+</table>';
+$arr='';
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        $arr.='{surtitle_out : "'.$cartObj['passengerDetails'][$i]['surtitle_out'].'"
+            ,pasengername_out : "'.$cartObj['passengerDetails'][$i]['pasengername_out'].'",
+            fname_out : "'.$cartObj['passengerDetails'][$i]['fname_out'].'",
+            tnum_out : "'.$cartObj['passengerDetails'][$i]['tnum_out'].'"
+            }'; 
+        if($i!=count($cartObj['passengerDetails'])-1)
+        $arr.=',';
+    }
+}
+$Step2cont.='<script language="javascript">';   
+if($arr!='')
+{
+$cntarr=count($cartObj['passengerDetails'])-1;
+$Step2cont.='jQuery("#addmoreoutDiv").EnableMultiField({ data:['.$arr.'] });';
+$Step2cont.="addmoreoutArray=['surtitle_out_".$cntarr."', 'pasengername_out_".$cntarr."','fname_out_".$cntarr."'];";
+$Step2cont.="jQuery('.removeFields').trigger('click');";
+}
+else{
+$Step2cont.='jQuery("#addmoreoutDiv").EnableMultiField();';
+}
+
+if(isset($cartObj['passengerDetails']))
+{
+    for($i=0;$i<count($cartObj['passengerDetails']);$i++)
+    {
+        if($i==0)
+        {
+            $Step2cont.='jQuery("#surtitle_out").val("'.$cartObj['passengerDetails'][$i]['surtitle_out'].'");';
+            $Step2cont.='jQuery("#pasengername_out").val("'.$cartObj['passengerDetails'][$i]['pasengername_out'].'");';
+            $Step2cont.='jQuery("#fname_out").val("'.$cartObj['passengerDetails'][$i]['fname_out'].'");';
+            $Step2cont.='jQuery("#tnum_out").val("'.$cartObj['passengerDetails'][$i]['tnum_out'].'");';
+        }
+        else {
+           $Step2cont.='jQuery("#surtitle_out_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['surtitle_out'].'");'; 
+           $Step2cont.='jQuery("#pasengername_out_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['pasengername_out'].'");'; 
+           $Step2cont.='jQuery("#fname_out_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['fname_out'].'");'; 
+           $Step2cont.='jQuery("#tnum_out_'.($i-1).'").val("'.$cartObj['passengerDetails'][$i]['tnum_out'].'");'; 
+        }
+    }
+}
+
+$Step2cont.='</script>'; 
+
+//$Step2cont.='<input type="submit" class="submit" value="Submit"/>
+$Step2cont.='<span id="submitTrav">Submit</span><input type="hidden" name="hid_reload" id="hid_reload" value="N"/>
+</fieldset>'; 
+  
+    }  
+    }
+    $output.=$Step2cont.'</div></form>';
+   
+    $output.="<script language='javascript'>
+        /* 
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+ if(jQuery('#service-as-transfer-node-form-trav #node_service_as_transfer') && jQuery('#service-as-transfer-node-form-trav #node_service_as_transfer').html()!=null)
+   {
+    var validField=new Array();
+    jQuery('#service-as-transfer-node-form-trav #node_service_as_transfer .required').each(function(index) {
+        validField[index]= jQuery(this).attr('id');
+    });
+    
+    var myform=new formtowizard({
+          formid: 'service-as-transfer-node-form-trav',
+          validate: validField,
+          //persistsection: true,
+          revealfx: ['fade', 500]
+    });
+  }
+  
+ jQuery(document).ready(function() { 
+jQuery(' #service-as-transfer-node-form-trav #dest_addr').change(function() {
+    if(jQuery(this).val()!='')
+    {
+        jQuery('#service-as-transfer-node-form-trav #dest_addr_Others').show(500); 
+        var dest_addr=jQuery(this).val();
+        jQuery.ajax({
+        url: '../../../../../cart.php',
+        type: 'POST',
+        data: {dest_addr : dest_addr,  process:'get-destaddr'},
+        dataType: 'json',
+                success: function(data) {
+                        var dest_addr_OthersTxt=''; 
+                        if(jQuery.trim(data)!='')
+                        {
+                            dest_addr_OthersTxt=data;
+                        }
+                        jQuery('#service-as-transfer-node-form-trav #dest_addr_Others #dest_addr_OthersTxt').val(dest_addr_OthersTxt); 
+                }
+        }); 
+    }
+    else
+    jQuery('#service-as-transfer-node-form-trav #dest_addr_Others').hide();
+    
+    return false;
+  }); 
+  
+  jQuery('#service-as-transfer-node-form-trav #name_addr').change(function() {
+ 
+    if(jQuery(this).val()!='')
+    {
+        jQuery('#service-as-transfer-node-form-trav #name_addr_Others').show(500); 
+        var name_addr=jQuery(this).val();
+        jQuery.ajax({
+        url: '../../../../../cart.php',
+        type: 'POST',
+        data: {dest_addr : name_addr,  process:'get-destaddr'},
+        dataType: 'json',
+                success: function(data) {
+                        var name_addr_OthersTxt=''; 
+                        if(jQuery.trim(data)!='')
+                        {
+                            name_addr_OthersTxt=data;
+                        }
+                        jQuery('#service-as-transfer-node-form-trav #name_addr_Others #name_addr_OthersTxt').val(name_addr_OthersTxt); 
+                }
+        }); 
+    }
+    else
+    jQuery('#service-as-transfer-node-form-trav #name_addr_Others').hide();
+    
+    return false;
+  });
+  
+  jQuery('#service-as-transfer-node-form-trav #endserv_addr').change(function() {
+ 
+    if(jQuery(this).val()!='')
+    {
+        jQuery('#service-as-transfer-node-form-trav #endserv_addr_Others').show(500); 
+        var endserv_addr=jQuery(this).val();
+        jQuery.ajax({
+        url: '../../../../../cart.php',
+        type: 'POST',
+        data: {dest_addr : endserv_addr,  process:'get-destaddr'},
+        dataType: 'json',
+                success: function(data) {
+                        var endserv_addr_OthersTxt=''; 
+                        if(jQuery.trim(data)!='')
+                        {
+                            endserv_addr_OthersTxt=data;
+                        }
+                        jQuery('#service-as-transfer-node-form-trav #endserv_addr_Others #endserv_addr_OthersTxt').val(endserv_addr_OthersTxt); 
+                }
+        }); 
+    }
+    else
+    jQuery('#service-as-transfer-node-form-trav #endserv_addr_Others').hide();
+    
+    return false;
+  });
+  
+  
+  jQuery('#service-as-transfer-node-form-trav #pick_addr').change(function() {
+ 
+    if(jQuery(this).val()!='')
+    {
+        jQuery('#service-as-transfer-node-form-trav #pick_addr_Others').show(500); 
+        var pick_addr=jQuery(this).val();
+        jQuery('#service-as-transfer-node-form-trav #endserv_addr option[value=\" + pick_addr +\"]').attr('selected','selected') ;
+        jQuery.ajax({
+        url: '../../../../../cart.php',
+        type: 'POST',
+        data: {dest_addr : pick_addr,  process:'get-destaddr'},
+        dataType: 'json',
+                success: function(data) {
+                        var pick_addr_OthersTxt=''; 
+                        if(jQuery.trim(data)!='')
+                        {
+                            pick_addr_OthersTxt=data;
+                        }
+                        jQuery('#service-as-transfer-node-form-trav #pick_addr_Others #pick_addr_OthersTxt').val(pick_addr_OthersTxt); 
+                }
+        }); 
+        
+        //jQuery('#service-as-transfer-node-form-trav #endserv_addr_Others').show(500); 
+    }
+    else
+    jQuery('#service-as-transfer-node-form-trav #pick_addr_Others').hide();
+    
+    return false;
+  });
+  
+  jQuery(' #service-as-transfer-node-form-trav #pickout_addr').change(function() {
+    if(jQuery(this).val()!='')
+    {
+        jQuery('#service-as-transfer-node-form-trav #pickout_addr_Others').show(500);
+        var pickout_addr=jQuery(this).val();
+        return jQuery.ajax({
+        url: '../../../../../cart.php',
+        type: 'POST',
+        data: {dest_addr : pickout_addr,  process:'get-destaddr'},
+        dataType: 'json',
+                success: function(data) {
+                        var pickout_addrTxt=''; 
+                        if(jQuery.trim(data)!='')
+                        {
+                            pickout_addrTxt=data;
+                        }
+                        jQuery('#service-as-transfer-node-form-trav #pickout_addr_Others #pickout_addrTxt').val(pickout_addrTxt); 
+                }
+        }); 
+                
+    }
+    else
+    jQuery('#service-as-transfer-node-form-trav #pickout_addr_Others').hide();
+   
+    return false;
+  });
+  
+  jQuery('#service-as-transfer-node-form-trav #dropoffout_addr').change(function() {
+
+    if(jQuery(this).val()!='')
+    {
+        jQuery('#service-as-transfer-node-form-trav #dropoffout_addr_Others').show(500);
+        var dropoffout_addr=jQuery(this).val();
+        jQuery.ajax({
+        url: '../../../../../cart.php',
+        type: 'POST',
+        data: {dest_addr : dropoffout_addr,  process:'get-destaddr'},
+        dataType: 'json',
+                success: function(data) {
+                        var dropoffout_addrTxt=''; 
+                        if(jQuery.trim(data)!='')
+                        {
+                            dropoffout_addrTxt=data;
+                        }
+                        jQuery('#service-as-transfer-node-form-trav #dropoffout_addr_Others #dropoffout_addrTxt').val(dropoffout_addrTxt); 
+                }
+        }); 
+    }
+    else
+    jQuery('#service-as-transfer-node-form-trav #dropoffout_addr_Others').hide();
+    
+    return false;
+  });
+
+  /* jQuery('#service-as-transfer-node-form-trav #dropoffout_addr').change(function() {
+    if(jQuery(this).val()=='Others')
+    jQuery('#service-as-transfer-node-form-trav #dropoffout_addr_Others').show(500); 
+    else
+    jQuery('#service-as-transfer-node-form-trav #dropoffout_addr_Others').hide();
+  });*/
+  
+  jQuery('#service-as-transfer-node-form-trav #airline').change(function() {
+    if(jQuery(this).val()=='Others')       
+    jQuery('#airline_Others').show(500);     
+    else
+    jQuery('#airline_Others').hide();
+
+  });
+  
+   jQuery('#service-as-transfer-node-form-trav #airlineout').change(function() {
+    if(jQuery(this).val()=='Others')       
+    jQuery('#airlineout_Others').show(500);     
+    else
+    jQuery('#airlineout_Others').hide();
+
+  });
+   jQuery('#service-as-transfer-node-form-trav #airport_dept').change(function() {
+    if(jQuery(this).val()=='others')       
+    jQuery('#airport_dept_Others').show(500);     
+    else
+    jQuery('#airport_dept_Others').hide();
+
+  });   
+  
+   jQuery('#service-as-transfer-node-form-trav #odd_bag').change(function() {
+    if(jQuery(this).val()!='' && (jQuery(this).val()=='Others' || jQuery(this).val()>0 ) ) 
+    {
+        //jQuery('#extra').html('✓').removeClass().addClass('tick'); 
+        if(jQuery(this).val()=='Others')
+        {
+            jQuery('#odd_bag_Others').show(500);  
+        }
+        else
+        {
+            jQuery('#odd_bag_Others').hide(); 
+        }
+    }
+    else
+    {
+      //jQuery('#extra').html('✗').removeClass().addClass('cross');
+      jQuery('#odd_bag_Others').hide();
+    }
+
+  });
+  
+  jQuery('#service-as-transfer-node-form-trav #no_people').change(function() {
+    if(jQuery(this).val()=='Others')   
+    {
+        var maxperson='".trim($node->field_maximum_number_of_passenge["und"][0]["value"])."';
+        if(jQuery('#no_people_OthersTxt').val()>maxperson)
+        {
+            
+            jQuery('#no_people_Others').show(500);     
+        }
+        /*else
+        jQuery('#no_people_Others').hide(500); */ 
+        jQuery('#no_people_Others').show(500);     
+    }
+    else
+    {
+        jQuery('#no_people_OthersTxt').val('');       
+        jQuery('#no_people_Others').hide();
+    }
+
+  });
+  
+  jQuery('#submitTrav').click(function(e) {  
+    if(jQuery('#typetrans').val()=='out')
+    {
+        jQuery('#decolout_hr_mt').removeClass('redvalid');
+        if(jQuery('#arrival_tm').val()=='1')
+        {  
+           if(jQuery('#decolout_hr_mt'))
+            {
+                jQuery('#decolout_hr_mt').val(jQuery('#decolout_hr_mt_day').val());
+            }
+        }
+        else if(jQuery('#arrival_tm').val()=='2')
+        {   
+            if(jQuery('#decolout_hr_mt'))
+            {
+                var dept=jQuery('#decolout_hr_mt').val();
+                deptarr=dept.split(' ');
+                var meridian='';
+                var hr='';
+                if(deptarr[0] && deptarr[0]!='')
+                {
+                    depthrarr=dept.split(':');
+                    hr=depthrarr[0];
+
+                    if(hr=='08'){
+                        hr=8;
+                    }
+                    else if(hr=='09'){
+                        hr=9;
+                    }
+                    else
+                    {
+                        hr=parseInt(hr);
+                    }
+                    meridian=deptarr[1];
+                    if(meridian=='AM')
+                    {
+                       if(hr>6)
+                       {
+                            jQuery('#step_1 .cartErrMsg').fadeIn();
+                            setTimeout(function(){jQuery('#step_1 .cartErrMsg').fadeOut()},4000);
+                            jQuery('#decolout_hr_mt').addClass('redvalid');
+                            return false;     
+                       }
+                    }
+                    else if(meridian=='PM')
+                    {
+                       if(hr<8)
+                       {
+                           jQuery('#step_1 .cartErrMsg').fadeIn();
+                           setTimeout(function(){jQuery('#step_1 .cartErrMsg').fadeOut()},4000);
+                           jQuery('#decolout_hr_mt').addClass('redvalid');
+                           return false;     
+                       }
+                    }
+
+                }
+            }
+        }
+    }
+    
+    
+
+
+
+
+
+
+    jQuery('#arriv_hr_mt').removeClass('redvalid');
+    if(jQuery('#arrival_tm').val()=='1')
+    {  
+       jQuery('#arriv_hr_mt').val(jQuery('#arriv_hr_mt_day').val());
+    }
+    else if(jQuery('#arrival_tm').val()=='2')
+    {  
+        var arriv=jQuery('#arriv_hr_mt').val();
+        if(arriv)
+        {
+            arrivarr=arriv.split(' ');
+            var meridian='';
+            var hr='';
+            if(arrivarr[0] && arrivarr[0]!='')
+            {
+                arrivhrarr=arriv.split(':');
+                hr=arrivhrarr[0];
+
+                if(hr=='08'){
+                    hr=8;
+                }
+                else if(hr=='09'){
+                    hr=9;
+                }
+                else
+                {
+                    hr=parseInt(hr);
+                }
+                meridian=arrivarr[1];
+                if(meridian=='AM')
+                {
+                   if(hr>6)
+                   {
+                        jQuery('#step_1 .cartErrMsg').fadeIn();
+                        setTimeout(function(){jQuery('#step_1 .cartErrMsg').fadeOut()},4000);
+                        jQuery('#arriv_hr_mt').addClass('redvalid');
+                        return false;     
+                   }
+                }
+                else if(meridian=='PM')
+                {
+                   if(hr<8)
+                   {
+                       jQuery('#step_1 .cartErrMsg').fadeIn();
+                       setTimeout(function(){jQuery('#step_1 .cartErrMsg').fadeOut()},4000);
+                       jQuery('#arriv_hr_mt').addClass('redvalid');
+                       return false;     
+                   }
+                }
+
+            }
+        }
+    }
+
+    
+    jQuery('#hid_reload').val('Y');
+    //alert('before'+jQuery('#hid_reload').val());
+    jQuery('#service-as-transfer-node-form-trav .formpaginate .submitTrav1').trigger('click');
+    if(jQuery('#hid_reload').val()=='Y')
+    {
+        jQuery('.plzwtMsg').fadeIn();
+        //setTimeout(function(){jQuery('.plzwtMsg').fadeOut()},4000);
+        setTimeout(function(){location.reload(true);},400); 
+    }
+    else
+    {
+        e.preventDefault();
+        jQuery(document).ajaxComplete(function(){
+            jQuery('#loader').show();
+            jQuery('#initialContainerMask').show();
+            if(jQuery('#hid_reload').val()!='N')
+            {
+                jQuery('.plzwtMsg').fadeIn();
+                //setTimeout(function(){jQuery('.plzwtMsg').fadeOut()},4000);
+                location.reload(true);
+            }
+        });
+
+    }
+    
+  });
+  
+    
+    if(jQuery('#service-as-transfer-node-form-trav #addmoreoutDiv'))
+    {
+        jQuery('#addmoreoutDiv').EnableMultiField();
+    }
+    
+if(jQuery('#service-as-transfer-node-form-trav .formpaginate'))
+{ 
+   jQuery('#service-as-transfer-node-form-trav .formpaginate').append('<span style=\'float: right;display:none\' class=\'submitTrav1\'>Submit</span>') 
+}
+
+if(jQuery('#modalContent'))
+{ 
+   var cont_html=jQuery('#modalContent .modal-header .close').html(); 
+   cont_html=cont_html.replace('Close Window','');
+   jQuery('#modalContent .modal-header .close').html(cont_html);
+}
+
+  
+  jQuery('.close').click(function() {
+    location.reload(true);
+  });
+  
+jQuery('.onlyNum').keydown(function(event) {
+    // Allow: backspace, delete, tab, escape, and enter
+    if ( event.keyCode == 46 || event.keyCode == 8 || event.keyCode == 9 || event.keyCode == 27 || event.keyCode == 13 || 
+         // Allow: Ctrl+A
+        (event.keyCode == 65 && event.ctrlKey === true) || 
+         // Allow: home, end, left, right
+        (event.keyCode >= 35 && event.keyCode <= 39)) {
+             // let it happen, don't do anything
+             return;
+    }
+    else {
+        // Ensure that it is a number and stop the keypress
+        if (event.shiftKey || (event.keyCode < 48 || event.keyCode > 57) && (event.keyCode < 96 || event.keyCode > 105 )) {
+            event.preventDefault(); 
+        }   
+    }
+});
+
+
+
+});
+
+function nopeopleUpd(obj,maxperson)
+{
+    if(parseInt(obj.value)!='' && parseInt(obj.value)>maxperson)
+    {       
+        jQuery('#qty').show(500);
+        jQuery('#extra_charge').show(500);
+    }
+    else
+    {        
+        jQuery('#qty').hide(500);        
+        if(jQuery('#extra').css('display')=='none' && jQuery('#ntrate').css('display')=='none')
+        {
+            jQuery('#extra_charge').hide();
+        }
+    }
+}
+
+function extraCharge(obj)
+{
+    
+    if(obj.value!='' && obj.value!='0')
+    {       
+        jQuery('#extra').show(500);
+        jQuery('#extra_charge').show(500);
+    }
+    else
+    {        
+        jQuery('#extra').hide(500);
+        if(jQuery('#qty').css('display')=='none' && jQuery('#ntrate').css('display')=='none')
+        {
+            jQuery('#extra_charge').hide();
+        }
+        
+        
+    }
+}
+function nightCharge(obj)
+{
+    
+    if(obj.value!='' && obj.value!='1')
+    {
+        jQuery('#ntrate').show(500);
+        jQuery('#extra_charge').show(500);
+    }
+    else
+    {        
+        jQuery('#ntrate').hide(500);       
+        if(jQuery('#qty').css('display')=='none' && jQuery('#extra').css('display')=='none')
+        {
+            jQuery('#extra_charge').hide();
+        }       
+        
+    }
+}
+
+
+var dt=new Date();
+var dty=dt.getFullYear();
+var dtm=dt.getMonth();
+var dtd=dt.getDate();
+
+jQuery('.arrivDayCal, .serviceDayCal, .servDayCal').datetimepicker({
+    dateFormat: 'd/mm/yy',
+    altField: '#',
+    showHour:false,
+    showMinute:false,
+    showTime:false,
+    maxDate: new Date(dty+1, 12, 31),
+    minDate: new Date(dty, dtm, dtd+3)
+});
+jQuery('#arriv_calimg').click(function() {
+jQuery('#arriv_day').trigger('focus');
+});
+jQuery('#serviceday_calimg').click(function() {
+jQuery('#service_day').trigger('focus');
+});
+jQuery('#serv_calimg').click(function() {
+jQuery('#serv_day').trigger('focus');
+});
+
+jQuery('#serviceday_hrimg').click(function() {
+jQuery('#dept_hr_mt').trigger('focus');
+});
+jQuery('#arriv_hrimg').click(function() {
+jQuery('#arriv_hr_mt').trigger('focus');
+});
+jQuery('#arriv_hrimg_day').click(function() {
+jQuery('#arriv_hr_mt_day').trigger('focus');
+});
+jQuery('#decolout_hrimg_day').click(function() {
+jQuery('#decolout_hr_mt_day').trigger('focus');
+});
+jQuery('#arrivout_hrimg').click(function() {
+jQuery('#arrivout_hr_mt').trigger('focus');
+});
+jQuery('#arriv_estim_tmimg').click(function() {
+jQuery('#arriv_estim_tm').trigger('focus');
+});
+jQuery('#decolout_hrimg').click(function() {
+jQuery('#decolout_hr_mt').trigger('focus');
+});
+jQuery('#pickout_hrimg').click(function() {
+jQuery('#pickout_hr_mt').trigger('focus');
+});
+
+jQuery('#arrivout_hr_mt').change(function() {
+    if(jQuery('#arrivout_hr_mt').val()!='')
+    {
+        var decol=jQuery('#arrivout_hr_mt').val();
+        decolarr=decol.split(' ');
+        var meridian='';
+        var hr='';
+        var mt='';
+        if(decolarr[0] && decolarr[0]!='')
+        {
+            decolhrarr=decol.split(':');
+            hr=decolhrarr[0];
+            
+            if(hr=='08'){
+                hr=8;
+            }
+            else if(hr=='09'){
+                hr=9;
+            }
+            else
+            {
+                hr=parseInt(hr);
+            }
+            
+            if(decolhrarr[1] && decolhrarr[1]!='')
+            {
+                mt=parseInt(decolhrarr[1]);
+                if(mt<10){ mt='0'+mt; }
+            }
+            meridian=decolarr[1];
+            hr=hr-2;            
+            if(hr==0){ 
+                hr=12;
+                if(meridian=='AM')
+                {
+                    meridian='PM';
+                }
+                else
+                {
+                    meridian='AM';
+                }
+            }
+            if(hr<0)
+            {  
+                hr=hr+12;
+                if(meridian=='AM')
+                {
+                    meridian='PM';
+                }
+                else
+                {
+                    meridian='AM';
+                }
+            }
+            if(hr<10){ hr='0'+hr; }
+        }
+        jQuery('#arriv_estim_tm').val(hr+':'+mt+' '+meridian);
+    }
+}); 
+
+jQuery('#decolout_hr_mt').change(function() {
+    if(jQuery('#decolout_hr_mt').val()!='')
+    {
+        var decol=jQuery('#decolout_hr_mt').val();
+        decolarr=decol.split(' ');
+        var meridian='';
+        var hr='';
+        var mt='';
+        if(decolarr[0] && decolarr[0]!='')
+        {
+            decolhrarr=decol.split(':');
+            hr=decolhrarr[0];
+            
+            if(hr=='08'){
+                hr=8;
+            }
+            else if(hr=='09'){
+                hr=9;
+            }
+            else
+            {
+                hr=parseInt(hr);
+            }
+            
+            if(decolhrarr[1] && decolhrarr[1]!='')
+            {
+                mt=parseInt(decolhrarr[1]);
+                if(mt<10){ mt='0'+mt; }
+            }
+            meridian=decolarr[1];
+            hr=hr-3;            
+            if(hr==0){ 
+                hr=12;
+                if(meridian=='AM')
+                {
+                    meridian='PM';
+                }
+                else
+                {
+                    meridian='AM';
+                }
+            }
+            if(hr<0)
+            {  
+                hr=hr+12;
+                if(meridian=='AM')
+                {
+                    meridian='PM';
+                }
+                else
+                {
+                    meridian='AM';
+                }
+            }
+            if(hr<10){ hr='0'+hr; }
+        }
+        jQuery('#pickout_hr_mt').val(hr+':'+mt+' '+meridian);
+        
+
+        //todo update code
+        if(jQuery('#typetrans').val()=='in&out' || jQuery('#typetrans').val()=='Commute')
+        {
+            if(jQuery('#decolout_hr_mt'))
+            {
+                var dept=jQuery('#decolout_hr_mt').val();
+                deptarr=dept.split(' ');
+                var meridian='';
+                var hr='';
+                if(deptarr[0] && deptarr[0]!='')
+                {
+                    depthrarr=dept.split(':');
+                    hr=depthrarr[0];
+
+                    if(hr=='08'){
+                        hr=8;
+                    }
+                    else if(hr=='09'){
+                        hr=9;
+                    }
+                    else
+                    {
+                        hr=parseInt(hr);
+                    }
+                    meridian=deptarr[1];
+                    if(meridian=='AM')
+                    {
+                       if(hr<7)
+                       {
+                            jQuery('#step_2 .calMsg').fadeIn();
+                            setTimeout(function(){jQuery('#step_2 .calMsg').fadeOut()},4000);
+                            return false;     
+                       }
+                    }
+                    else if(meridian=='PM')
+                    {
+                       if(hr>8)
+                       {
+                           jQuery('#step_2 .calMsg').fadeIn();
+                           setTimeout(function(){jQuery('#step_2 .calMsg').fadeOut()},4000);
+                           //jQuery('#decolout_hr_mt').addClass('redvalid');
+                           return false;     
+                       }
+                    }
+
+                }
+                //alert('hr : '+hr+'meridian : '+meridian);
+            }
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    }
+}); 
+/*
+
+*/
+/* 7, 19  Between 7:00 AM & 8:00 PM
+*hourMin: 20,
+    hourMax: 23
+   20, 19  Between 8:00 PM & 7:00 AM
+*/
+
+jQuery('#arriv_hr_mt_day').timepicker({
+    hourGrid: 4,
+    minuteGrid: 10,
+    timeFormat: 'hh:mm TT',
+    hourMin: 7,
+    hourMax: 19    
+});
+jQuery('#decolout_hr_mt_day').timepicker({
+    hourGrid: 4,
+    minuteGrid: 10,
+    timeFormat: 'hh:mm TT',
+    hourMin: 7,
+    hourMax: 19    
+});
+jQuery('.sliderhrmt').timepicker({
+    hourGrid: 4,
+    minuteGrid: 10,
+    timeFormat: 'hh:mm TT'
+});
+
+   ";
+  $output.="</script>"; 
+   return $output;
+   
+}
+
+
+

@@ -1,0 +1,215 @@
+/**
+ * Example Print Preview site
+ *
+ *	print.css
+ *	author: Tim Connell
+ */
+
+/* -- Hide screen specific elements -- */
+#nav,
+#footer .footer-links,
+#feature a.prev,
+#feature a.next,
+a.print-preview {
+    display: none;
+}
+
+
+/* -- Typography -- */
+body {
+    background: #FFF;
+    color: #000;
+    font-family: verdana,arial,sans-serif;
+    line-height: 1.2;
+}
+
+p, table, ul, ol, dl, blockquote, pre, code, form {
+    margin: 0 0 1em;
+}
+
+h1,h2,h3,h4,h5 {
+    font-weight: normal;
+    margin: 2em 0 0.5em;
+    text-shadow: rgba(0, 0, 0, 0.44) 1px 1px 2px;
+}
+
+h1 { font-size: 2em; margin: 2em 0 0.25em; }
+h2 { font-size:1.7em; }
+h3 { font-size:1.5em; }
+h4 { font-size:1.2em; }
+h5 { font-size:1em; }
+
+
+/* -- Style site heading -- */
+#header strong {
+    color: #000;
+    display: block;
+    font-weight: normal;
+    font-size: 3em;
+    margin: 0 0 1em;
+    padding: 0;
+    text-shadow: rgba(0, 0, 0, 0.44) 1px 1px 2px;
+}
+    
+
+/* -- Add message re print -- */
+/*#content:before {
+    content: "Thank you for printing this page. Do come back to foo.tld, we are constantly adding new and interesting articles and tutorials. Note: To help the environment we have automatically removed navigaton and other unessessary elements from the page.";
+    display: block;
+    border: 1px solid #ccc;
+    font-style: italic;
+    margin: 0 0 1em;
+    padding: 8px 10px;
+}*/
+
+/*a:link:after,
+a:visited:after {
+  content: " (" attr(href) ") ";
+  font-size: 80%;
+  text-decoration: none;
+}*/
+
+
+/* -- Accommodate JS driven elements --*/
+#feature > div {
+    border: none;
+    overflow: visible;
+    height: auto;
+}
+
+    #feature div.items {
+        left: auto !important;
+        position: relative;
+        overflow: visible;
+        width: auto;
+    }
+
+    #feature div.items div {
+        float: none;
+        margin: 20px 0;
+        position: relative;
+    }
+
+/* -- Photo galleries -- */
+div.gallery {
+    margin: 1em 0;    
+    overflow: hidden;
+}
+
+    div.gallery div.items div {
+        float: left;
+        margin-right: 10px;
+    }
+    
+/* -- Footer -- */
+#footer {
+    border-top: 1px solid #cecece;
+    font-size: 0.83em;
+    margin: 2em 0 0;
+    padding: 1em 0 0;
+}
+/********** Print page styles ***************/
+.page-payment #payCont .btn{ color: #FFFFFF!important;  margin-right: 5px; float: right;}
+.page-payment .invoiceTab{cursor:pointer;}
+.page-payment .invoiceContent{display: none;}
+.page-payment #cont_tab1link .print-preview{display: none}
+.invTitle {line-height: 0;}
+.invTitle, .page-payment #payCont .invTitle{text-align: left;font-size: 2em;color: #014F7D;margin-bottom: 15px;}
+.page-payment-complete #cont_tab1link .invTitle,
+.page-payment #payCont .invTitle{
+  padding-left: 5px;
+}
+.page-payment .btn{margin-top: 0px!important;margin-left: 10px;}
+.page-payment .fLeftW{width: 200px;}
+.page-mycart #pick_addr,.page-mycart #dest_addr,.page-mycart #name_addr,.page-mycart #endserv_addr
+{width: 195px;}
+.fRight{
+    float: right;
+}
+.fLeft{
+    float: left;
+}
+
+
+.page-payment-complete #payCont .article-title,
+.page-payment-complete #payCont .article-title, .page-payment #payCont .article-title { font-size: 18px; line-height:24px; color: #014F7D; font-weight:bold; margin-top:0px; margin-bottom:18px; font-family: verdana,arial,sans-serif;border-bottom: 1px solid #CCC;padding-bottom: 5px; }
+.page-payment-complete #payCont .article-title a, .page-payment #payCont .article-title a { color: #014F7D; text-decoration: none; }
+.page-payment-complete #payCont .article-title.with-meta, .page-payment #payCont .article-title.with-meta {margin-bottom: 0;}
+.page-payment-complete #payCont .article-meta, .page-payment #payCont .article-meta { font-size: 13px; line-height: 20px; color: #ccc; font-weight: bold; margin-top: 0;}
+
+
+.page-payment-complete #payCont .article-content , .page-payment #payCont .article-content { padding-left: 30px; font-size: 13px; line-height: 18px; color: #6C6C6C; margin-top: 0px; margin-bottom: 18px; font-family: verdana,arial,sans-serif; }
+.page-payment-complete #payCont .article-content a , .page-payment #payCont .article-content a { color: #FFFFFF; font-weight:bold; text-decoration:none; }
+.page-payment-complete #payCont .article-content img , .page-payment #payCont .article-content img { max-width: 100% }
+
+.page-payment-complete #payCont .article-content ol, .page-payment-complete #payCont .article-content ul
+.page-payment #payCont .article-content ol, .page-payment #payCont .article-content ul { margin-top:0px; margin-bottom:18px; margin-left:19px; padding:0; }
+.page-payment-complete #payCont .article-content li, .page-payment #payCont .article-content li { font-size: 13px; line-height: 18px; color: #444444; }
+.page-payment-complete #payCont .article-content li a, .page-payment #payCont .article-content li a { color: #014F7D; text-decoration:underline; }
+.page-payment-complete #payCont .article-content p,
+.page-payment #payCont .article-content p {margin-bottom: 15px;}
+
+.page-payment #payCont .serviceInfo, .page-payment-complete #payCont .serviceInfo {
+    border: medium none;
+    color: #6C6C6C;
+    font-weight: normal;
+}
+.page-payment-complete .blueTagR {
+    clear: both;
+    color: #2283BC;
+    float: right;
+    margin-bottom: 15px;
+    text-align: right;
+}
+.page-payment-complete #payCont .article-content p, .page-payment #payCont .article-content p {
+    margin-bottom: 15px;
+}
+
+.top-bar,
+.footer-pay{
+border-radius: 6px 6px 0px 0px;
+-moz-border-radius: 6px 6px 0px 0px;
+-webkit-border-radius: 6px 6px 0px 0px;
+-webkit-font-smoothing: antialiased;
+background-color: #014F7D;
+color: white;
+}
+.header-content,
+.header-content a{
+font-size: 12px;
+color: white !important;
+}
+.header-content{
+    padding:10px 7px;
+}
+.div-left {
+  width: 50%;
+  float: left;
+  }
+  .rightside {
+  width: 50%;
+  float: left;
+  }
+  .header-print{
+    width: 100%;
+  }.top-bar a {
+    color: #FFFFFF;
+    font-weight: bold;
+    text-decoration: none;
+}
+#headline{
+    padding: 5px 0 15px 0;
+    border-bottom: 1px solid #014F7D;
+}
+#payCont table{
+    width: 100%;
+}
+#payCont{
+    margin-top: 20px;
+}
+.footer-pay td{
+    padding: 10px 15px;
+}
+#content-column, .content-column, div.sidebar{
+    width: 100%;
+}

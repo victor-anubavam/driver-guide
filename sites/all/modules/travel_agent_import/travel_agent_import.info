@@ -1,0 +1,4 @@
+name = "Travel agent import"
+description = "importing travel agent with agency and network member"
+core = 7.x
+package = Custom modules

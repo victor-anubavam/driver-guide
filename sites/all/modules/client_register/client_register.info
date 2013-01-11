@@ -1,0 +1,11 @@
+name = Client Register
+description = Create Client Register using the Drupal Form API.
+package = Example modules
+core = 7.x
+files[] = clientregister.test
+
+; Information added by drupal.org packaging script on 2012-02-20
+
+core = "7.x"
+
+

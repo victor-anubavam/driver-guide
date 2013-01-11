@@ -1,0 +1,25 @@
+<?php
+/*
+* Author: Palniraj Mahalingam
+*
+*/
+
+
+
+function myreports_menu () {
+	$items = array();
+	
+	$items['myreports'] = array(
+	'title'             => 'Checkout My Reports',
+	'page callback'     => 'drupal_get_form',
+	'page arguments'    => array('myreports'),
+	'access callback' => TRUE,
+	'type' => MENU_CALLBACK,
+	'file' => 'myreports.inc', 
+	);
+       
+	return $items;
+}
+
+
+?>

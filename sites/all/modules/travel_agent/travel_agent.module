@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file
+ * Examples demonstrating the Drupal Form API.
+ */
+
+/**
+ * @defgroup travel_agent Example: Form API
+ * @ingroup examples
+ * @{
+ * Examples demonstrating the Drupal Form API.
+ *
+ * The Form Example module is a part of the Examples for Developers Project
+ * and provides various Drupal Form API Examples. You can download and
+ * experiment with this code at the
+ * @link http://drupal.org/project/examples Examples for Developers project page. @endlink
+ */
+
+/**
+ * Implements hook_menu().
+ *
+ * Here we set up the URLs (menu entries) for the
+ * form examples. Note that most of the menu items
+ * have page callbacks and page arguments set, with
+ * page arguments set to be functions in external files.
+ */
+function travel_agent_menu() {
+  $items = array();
+  $items['examples/travel_agent'] = array(
+    'title' => 'Create Your School Account',
+    'page callback' => 'travel_agent_intro',
+    'access callback' => TRUE,
+    'expanded' => TRUE,
+  );
+  $items['examples/travel_agent/tutorial'] = array(
+    'title' => 'Create Your School Account',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('travel_agent_tutorial_1'),
+    'access callback' => TRUE,
+    'description' => 'A set of ten tutorials',
+    'file' => 'travel_agent_tutorial.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+ 
+  $items['create-travel-agent'] = array(
+    'title' => '#9',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('travel_agent_tutorial_9'),
+    'access callback' => TRUE,
+    'description' => 'Tutorial 9: Form with dynamically added new fields',
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'travel_agent_tutorial.inc',
+    'weight' => 9,
+  );
+  return $items;
+}
+
+/**
+ * Page callback for our general info page.
+ */
+function travel_agent_intro() {
+  $markup = t('The form example module provides a tutorial, extensible multistep example, an element example, and a #states example');
+  return array('#markup' => $markup);
+}
+
+/**
+ * Implements hook_help().
+ */
+function travel_agent_help($path, $arg) {
+  switch ($path) {
+    case 'examples/travel_agent/tutorial':
+      // TODO: Update the URL.
+      $help = t('This form example tutorial for Drupal 7 is the code from the <a href="http://drupal.org/node/262422">Handbook 10-step tutorial</a>');
+      break;
+    case 'examples/travel_agent/element_example':
+      $help = t('The Element Example shows how modules can provide their own Form API element types. Four different element types are demonstrated.');
+      break;
+  }
+  if (!empty($help)) {
+    return '<p>' . $help . '</p>';
+  }
+}
+
+/**
+ * Implements hook_element_info().
+ *
+ * To keep the various pieces of the example together in external files,
+ * this just returns _travel_agent_elements().
+ */
+function travel_agent_element_info() {
+  require_once('travel_agent_elements.inc');
+  return _travel_agent_element_info();
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * The only theme implementation is by the element example. To keep the various
+ * parts of the example together, this actually returns
+ * _travel_agent_element_theme().
+ */
+function travel_agent_theme($existing, $type, $theme, $path) {
+  require_once('travel_agent_elements.inc');
+  return _travel_agent_element_theme($existing, $type, $theme, $path);
+}
+
+function travel_agent_form_user_login_block_alter(&$form, &$form_state){
+$item = array();
+$items[] = l(t("Create my travel agent's account"), 'create-travel-agent');
+$items[] = l(t('Forgot Your Password?'), 'user/password');
+$form['links']['#markup'] = theme('item_list', array('items' => $items));
+}
+
+/**
+ * @} End of "defgroup travel_agent".
+ */

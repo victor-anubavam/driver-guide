@@ -1,0 +1,25 @@
+<?php
+/*
+* Paolo Mainardi (paolo@twinbit.it)
+*
+* Based on: http://blog.jeremymartin.name/2008/02/easy-multi-select-transfer-with-jquery.html
+*
+*/
+
+
+function ep($obj) {
+	echo '<pre>'; print_r($obj);
+}
+function epe($obj) {
+	ep($obj); exit;
+}
+
+
+function regionselector_form_alter(&$form, &$form_state, $form_id)
+{
+	print '<pre>';
+	print_r($form);
+	print '</pre>';
+		
+}
+?>

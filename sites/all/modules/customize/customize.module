@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Define dependencies between fields based on their states and values.
+ *
+ * Conditional Fields for Drupal 7 is basically an user interface for the States
+ * API, plus the ability to hide fields on certain conditions when viewing
+ * content.
+ */
+
+
+function customize_form_alter(&$form, &$form_state, $form_id){  
+  if($form_id == 'driver_at_disposal_node_form'){   
+  }
+  
+}

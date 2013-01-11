@@ -1,0 +1,34 @@
+<?php
+/*
+* Author: Palniraj Mahalingam
+*
+*/
+
+
+
+function searchreports_menu () {
+	$items = array();
+	
+	$items['search-reports'] = array(
+	'title'             => 'Reports',
+	'page callback'     => 'drupal_get_form',
+	'page arguments'    => array('search_reports'),
+	'access callback' => TRUE,
+	'type' => MENU_CALLBACK,
+	'file' => 'searchreports.inc', 
+	);
+        
+        $items['search-reports-member'] = array(
+	'title'             => 'Reports',
+	'page callback'     => 'drupal_get_form',
+	'page arguments'    => array('search_reports_member'),
+	'access callback' => TRUE,
+	'type' => MENU_CALLBACK,
+	'file' => 'searchreports.inc', 
+	);
+       
+	return $items;
+}
+
+
+?>

@@ -1,0 +1,4 @@
+name = "Member Import"
+description = "Member Import from csv file"
+core = 7.x
+package = Custom modules

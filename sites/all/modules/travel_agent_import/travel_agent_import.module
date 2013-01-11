@@ -1,0 +1,282 @@
+<?php
+function travel_agent_import_menu () {
+    $items = array();
+    $items['travel-agent-import'] = array(
+    'title'             => 'Travel Agent Import',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('travel_agent_import_upload'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'travel_agent_import.inc',
+    );
+    
+    return $items;
+}
+
+function travel_agent_import_form_alter(&$form, &$form_state, $form_id) {
+
+  if($form_id=='travel_agent_import_upload') {
+   
+  }
+}
+
+
+function travel_agent_import_upload_validate (&$form, &$form_state) {   
+
+
+    if($form['#form_id']=='travel_agent_import_upload')    {
+     
+      if($_FILES['travelagentupload']['name']=='')
+        {
+            form_set_error('file', t('Select a file to upload member.'));
+        }
+        else if($_FILES['travelagentupload']['type']!='text/csv')
+        {
+            form_set_error('file', t('Select a CSV formated file.'));
+        }
+        else if($_FILES["travelagentupload"]["error"] > 0) {
+            form_set_error('file', t('file error - '.$_FILES["file"]["error"]));
+        }
+        if(!isset($form['network']['#value']) || trim($form['network']['#value'])=='')
+        {
+            form_set_error('file', t('Select a network for member.'));
+        }
+        else if(trim($form['network']['#value'])=='00' && trim($_REQUEST['network_name_others'])=='')
+        {
+            form_set_error('file', t('please fill the network.'));
+        }
+    }
+}
+
+function travel_agent_import_upload_submit(&$form,&$form_state) {
+    
+        global $base_path;       
+        require_once DRUPAL_ROOT.'/'.variable_get('password_inc', 'includes/password.inc');
+        require_once DRUPAL_ROOT.'/'.variable_get('form.inc', 'includes/form.inc');
+        $storagename = date("m-D-Y").'-'.time().'.csv';
+        $new_file_name =  $_SERVER['DOCUMENT_ROOT'].$base_path."sites/default/files/csvupload/".$storagename;
+        
+       // $new_file_name =  $_SERVER['DOCUMENT_ROOT'].$base_path."sites/default/files/csvupload/123456.csv";
+      //  $file = file_save_upload('upload', array('file_validate_extensions' => array('csv'),));      
+       // $tmp_name = $_SERVER['DOCUMENT_ROOT'].drupal_realpath($file->uri);
+   
+        if (!is_writable(dirname($new_file_name))) {        
+            echo dirname($new_file_name) . ' must writable!!!';
+        } else {
+        copy($_FILES['travelagentupload']['tmp_name'], $_SERVER['DOCUMENT_ROOT']."/sites/default/files/csvupload/".$storagename);
+        
+        if ($file = fopen($new_file_name,"r")) {
+            $firstline = fgets ($file,4096);
+            
+                //Gets the number of fields, in CSV-files the names of the fields are mostly given in the first line
+            $num = strlen($firstline) - strlen(str_replace(";", "", $firstline));            
+                //save the different fields of the firstline in an array called fields
+            $fields = array();
+            $fields = explode(";", $firstline, ($num+1));
+
+            $line = array();
+            $i = 0;
+
+                //CSV: one line is one record and the cells/fields are seperated by ";"
+                //so $dsatz is an two dimensional array saving the records like this: $dsatz[number of record][number of cell]
+            while ( $line[$i] = fgets ($file, 4096) ) {
+                $dsatz[$i] = array();
+                $dsatz[$i] = explode( ";", $line[$i], ($num+1) );
+                $i++;
+            }
+           
+            foreach ($dsatz as $key => $number) { 
+                        //new table row for every record
+                foreach ($number as $k => $content) {
+                               
+                    $string = $content;
+                    $pattern = '"';
+                    $start = 0;
+                    $arr=array();
+                    $inc=0;
+
+                    while(($newLine = strpos($string, $pattern, $start)) !== false) {
+                        $start = $newLine + 1;
+
+                        $arr[$inc]=$newLine;
+                        $sstr='';
+                        $rsstr='';
+
+                        if($inc%2==1)
+                        {
+                            $sstr=substr($string, $arr[$inc-1], (($arr[$inc]+1)-$arr[$inc-1]));
+                            $rsstr=str_replace(',', '?#', $sstr);               
+                            $rsstr=str_replace('"', '', $rsstr);                
+                            $string=str_replace($sstr, $rsstr, $string);
+                        }
+                        $inc++;
+                    }
+                    $fields = explode( ",", $string );
+                    // Fetching colum and rows from uploaded csv file
+                   // echo "<pre>";print_r($fields);
+                    foreach ($fields as $key => $cell) {                        
+                        $nodeArry = array();
+                        $nodeArry['firstname'] = str_replace('?#', '',$fields[0]);
+                        $nodeArry['lastname'] = $fields[1];
+                        $nodeArry['position'] = $fields[3];
+                        $nodeArry['agentname'] = str_replace('?#', '',$fields[2]);
+                        $nodeArry['address'] = $fields[4];                        
+                        if(!empty($fields[5])) {
+                        $nodeArry['address'].= ",".$fields[5];    
+                        }
+                        $nodeArry['address'] = str_replace('?#', '',$nodeArry['address']);
+                        $nodeArry['city'] = $fields[6];
+                        $nodeArry['state'] = $fields[7];
+                        $nodeArry['zipcode'] = str_replace('-','', $fields[8]);
+                        $nodeArry['zipcode'] = str_replace(',','', $nodeArry['zipcode']);
+                        $nodeArry['country'] = $fields[9];
+                        $nodeArry['telephone'] = $fields[10];
+                        $nodeArry['fax'] = $fields[11];
+                        $nodeArry['emailid'] = $fields[12];
+                        //$nodeArry['webpage'] = $fields[13];
+                        //$nodeArry['Catégories'] = $fields[14];
+                    }
+                      // creating user
+            // echo "<pre>";print_r($nodeArry); echo "</pre>";
+                 //    exit;
+                      if(strstr($nodeArry['emailid'], '@')) {
+                        drupal_set_message("Agent - ".$nodeArry['agentname']." Added");
+                            $account = new stdClass;
+                            $account->is_new = TRUE;
+                            $email  = db_query("select mail from users where mail ='".$nodeArry['emailid']."'")->fetchField();
+                            if(empty($nodeArry['firstname'])){
+                                 $nodeArry['firstname'] = $nodeArry['agentname'];
+                            }
+                            if(empty($email)) {                                
+                            $username  = db_query("select mail from users where name ='".str_replace("'","\'",$nodeArry['firstname'])."'")->fetchField();                            
+                            //echo $username."sdfsdf";
+                            if(empty($username)) {
+                            $account->name = $nodeArry['firstname'];//$node->field_uname['und'][0]['value'];
+                            } else {
+                            $account->name = $nodeArry['firstname'].rand();//$node->field_uname['und'][0]['value'];
+                            }                            
+                            $account->pass = user_hash_password($account->name);
+                            $account->mail = $nodeArry['emailid'];
+                            $account->init = $nodeArry['emailid'];
+                            $account->status = true;               
+                            $account->roles = array(
+                                2 => 'authenticated',
+                                5 => 'travel agent',
+                            );
+                            $account->timezone = variable_get('date_default_timezone', '');
+                            
+                            user_save($account);
+                            
+                            $uid = db_query("select uid from users where name='".str_replace("'","\'",$account->name)."' and mail ='".str_replace("'","\'",$account->mail)."'")->fetchField();
+                            //creating headquarter member group
+                            $node = new stdClass();
+                            $node->type = 'travel_agent_advisors';
+                            node_object_prepare($node);
+                            $title  = db_query("select nid from node where title='".str_replace("'","\'",$nodeArry['agentname'])."' and type='travel_agent_advisors'")->fetchField();
+                            if(!empty($title)) {
+                            $node->title =  $nodeArry['agentname']." ".$account->name; 
+                            }else {
+                            $node->title =  $nodeArry['agentname'];
+                            }
+                           // $node->title =  $nodeArry['agentname'];
+                            $node->field_at_first_name[LANGUAGE_NONE][0]['value'] = $nodeArry['firstname'];
+                            $node->field_last_name[LANGUAGE_NONE][0]['value'] = $nodeArry['lastname'];
+                            $node->field_position[LANGUAGE_NONE][0]['value'] =  $nodeArry['position'];
+                            $node->field_contact_email_id[LANGUAGE_NONE][0]['email'] =  $nodeArry['emailid'];
+                            $node->field_company_email_id[LANGUAGE_NONE][0]['email'] =  $nodeArry['emailid'];
+                            $node->field_agent_state[LANGUAGE_NONE][0]['value'] = $nodeArry['state'];        
+                            $node->field_agent_city[LANGUAGE_NONE][0]['value'] = $nodeArry['city'];
+                            if((!empty($nodeArry['zipcode'])) && (is_numeric($nodeArry['zipcode'])))
+                            $node->field_agent_zip_code[LANGUAGE_NONE][0]['value'] = $nodeArry['zipcode'];
+                          //  echo "Zip code".$nodeArry['zipcode']."<br>";
+                            $node->field_street_and_number[LANGUAGE_NONE][0]['value'] = $nodeArry['address'];
+                            $node->field_network[LANGUAGE_NONE][0]['nid'] = $form['network']['#value'];
+                         //   $node->field_telephone[LANGUAGE_NONE][0]['value'] = $nodeArry['telephone'];
+                          //  $node->field_fax[LANGUAGE_NONE][0]['value'] = $nodeArry['fax'];
+                           // $node->field_website_url[LANGUAGE_NONE][0]['url'] = $nodeArry['webpage']; 
+                          //  $node->field_website_url[LANGUAGE_NONE][0]['title'] =  $nodeArry['webpage'];
+                            $node->uid = $uid;
+                            $groupAdminId = $node->uid;
+                            /*if($nodeArry['country'] == "United States") {
+                                $countryCode = "US";
+                            }else {
+                            $countryCode = db_query("select iso2 from countries_country where name= '".$nodeArry['country']."'")->fetchField();
+                            }
+                            if(!empty($countryCode))
+                            $node->field_country_addr[LANGUAGE_NONE][0]['iso2'] = $countryCode;*/
+                            
+                            $node->language = LANGUAGE_NONE;
+                            //echo "<pre>";print_r($node);
+                            node_save($node);    
+                           $network =$form['network']['#value'];                        
+                           $email = $nodeArry['emailid'];
+                            // echo $network."<br>";
+                            // echo $email."<br>";
+                            // exit;
+                         
+                                    $emailSplit = explode("@",$email);
+                                    $result = db_query("SELECT og_membership.etid AS nid,og_membership.entity_type AS TYPE ,og_membership.gid AS network_id, og.label AS title,
+                                           og.gid as member_id,field_data_field_company_email_id.field_company_email_id_email AS cmymail FROM og_membership
+                                           JOIN og ON og.gid = og_membership.gid
+                                           JOIN field_data_field_company_email_id ON field_data_field_company_email_id.entity_id = og_membership.etid
+                                           WHERE og.etid = ".$network." AND field_company_email_id_email LIKE '%$emailSplit[1]%'
+                                           AND og_membership.entity_type = 'node' AND field_data_field_company_email_id.bundle='travel_agency'");
+                       
+                                            $Group_id = '';
+                                            $memid = '';
+                                            if($result->rowCount() == 1) {
+                                            foreach ($result as $record) {                           
+                                          
+                                              $Group_id = db_query("select gid from og where etid= '".$record->nid."'")->fetchField();
+                                              $matchHQ = $record->nid;
+                                            //  print_r($record);
+                                            
+                                            }
+                                            }
+                                           
+                            /*$result = node_save($node);                      */
+                   
+                     
+                     //adding head quarter member to network
+                                  //adding head quarter member to network
+                                if(!empty($form['network']['#value']) && !empty($Group_id) && !empty($matchHQ)) {                          
+                                 /* $gid = db_query("select gid from og where etid=".$member_name."")->fetchField();*/
+                                   $memid = db_query("select nid from node where title='".str_replace("'","\'",$node->title)."' and type='travel_agent_advisors'")->fetchField();
+                                  /*echo "network id".$memid;*/
+                                   $created=time();
+                                   
+                                   $nid = db_query("select nid from node WHERE title='".str_replace("'","\'",$node->title)."' and type='travel_agent_advisors'")->fetchField();                            
+                                   $currentGrouid = db_query("select gid from og where etid='".$nid."'")->fetchField();
+                                   
+                          db_query("INSERT INTO og_membership (type, etid, entity_type, gid, state, created)
+                          VALUES ('og_membership_type_default','".$memid."','node', '".$Group_id."', '".OG_STATE_ACTIVE."','".$created."')");
+                     
+                                  db_query("INSERT INTO field_data_group_audience (entity_type, bundle, entity_id, revision_id, language, delta, group_audience_gid, group_audience_state, group_audience_created )
+          VALUES ('node', 'travel_agent_advisors', '".$memid."', '".$memid."', 'und','0','".$Group_id."', '1','".$created."')");
+                                   
+                                   db_query("INSERT INTO og_users_roles(uid,rid,gid) values('".$groupAdminId."',3,'".$currentGrouid."')");
+                                   
+                                    } else {
+                                   $nid = db_query("select nid from node WHERE title='".str_replace("'","\'",$node->title)."' and type='travel_agent_advisors'")->fetchField();
+                                  // echo $nid."<br>";
+                                  // echo "select nid from node WHERE title='".str_replace("'","\'",$node->title)."' and type='travel_agent_advisors'";
+                                   $currentGrouidempty = db_query("select gid from og where etid='".$nid."'")->fetchField();
+                                 //  echo "select gid from og where etid='".$nid."'";
+                                //   echo $currentGrouid;
+                                 //  echo "INSERT INTO og_users_roles(uid,rid,gid) values('".$groupAdminId."',3,'".trim($currentGrouid)."')";
+                                db_query("INSERT INTO og_users_roles(uid,rid,gid) values('".$groupAdminId."',3,'".trim($currentGrouidempty)."')");
+                                 //  exit;
+                                  }
+                            
+                            }
+                            }
+            }
+            }
+           // exit;
+             drupal_set_message("Travel agents has been imported successfully");
+            }
+        }  
+
+}
+
+

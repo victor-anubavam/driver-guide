@@ -1,0 +1,1591 @@
+/*
+ * @file
+ * global.styles
+ *
+ * Styles you add here will load for all device sizes, they are "global", as
+ * opposed to "responsive" styles, which only load for a given breakpoint (media
+ * query) that you set in theme settings. See the README for more details.
+ *
+ *
+ * How to use this file:
+ * --------------------
+ *
+ * There are many empty selectors and some basic styles to act as a guide.
+ * Nothing is set in stone and you can change anything - even delete all of it
+ * and start with your own clean slate.
+ *
+ * See global.base also which includes normalize.css and some additional
+ * helper classes and base styles.
+ */
+
+/* =============================================================================
+ *   Base
+ * ========================================================================== */
+
+/*
+ * To preserve theme settings never apply font properties to the HTML element.
+ * This is critically important if you are using the Responsive JavaScript
+ * feature as this relies on being able to set a pseudo font family on the HTML
+ * element. If you need to set default font properties of any kind use the BODY
+ * element as these can be overridden using font theme settings.
+ */
+
+html {
+  background: #fff;
+}
+
+body {
+font-family:"Trebuchet MS", "Helvetica Neue", Arial, Helvetica, sans-serif;
+font-size:13px;
+color:#6c6c6c;
+}
+
+pre,code,tt,samp,kbd,var {
+font-family:Consolas, Monaco, 'Courier New', Courier, monospace, sans-serif;
+}
+
+#header {
+background:url(../images/top_bg.png) repeat-x #fff;
+height:147px;
+}
+
+#content {
+float:left;
+position:relative;
+}
+
+#footer {
+float:left;
+width:100%;
+background:url(../images/footer_bg.png)repeat-x;
+}
+
+#logo {
+padding:10px 0;
+}
+
+#logo img {
+vertical-align:bottom;
+}
+
+#aggregator .feed-source .feed-icon {
+display:inline;
+float:none;
+margin-right:10px;
+}
+
+.feed-details dt,.feed-details dd {
+display:inline;
+margin:0;
+}
+
+ul.links.inline {
+display:block;
+}
+
+.nav {
+clear:both;
+margin:10px 0;
+}
+
+.nav li,.nav ul.menu li {
+display:inline;
+float:left;
+list-style:none;
+margin:0;
+padding:0;
+}
+
+.nav li a,.nav ul.menu li a {
+display:block;
+white-space:nowrap;
+padding:0 10px;
+}
+
+ul.sf-menu a {
+border-left:0;
+border-top:0;
+text-decoration:none;
+height:2.5em;
+line-height:2.5em;
+padding:0 10px;
+}
+
+.sf-vertical li:hover ul,.sf-vertical li.sfHover ul {
+left:100%;
+top:0;
+margin:0;
+padding:0;
+}
+
+.sf-navbar {
+padding-bottom:0!important;
+}
+
+.block .menu li.content {
+padding:0;
+}
+
+.book-navigation .page-up {
+min-width:2em;
+white-space:nowrap;
+}
+
+.book-navigation .menu {
+margin-left:0;
+}
+
+#breadcrumb {
+margin:10px 0;
+}
+
+#breadcrumb .breadcrumb-label {
+font-size:1em;
+display:inline;
+padding-right:10px;
+}
+
+#breadcrumb .breadcrumb-label:after {
+content:":";
+}
+
+#breadcrumb li {
+list-style:none;
+display:inline;
+}
+
+ul.pager {
+clear:both;
+text-align:center;
+margin:0;
+}
+
+ul.pager li {
+background-image:none;
+display:inline;
+list-style-type:none;
+padding:.5em;
+}
+
+#skip-link {
+left:50%;
+margin-left:-6.5em;
+margin-top:0;
+position:absolute;
+width:12em;
+z-index:50;
+padding:0 .5em;
+}
+
+#tasks {
+margin-bottom:15px;
+}
+
+ul.primary {
+border-bottom-color:#ccc;
+margin:20px 0;
+padding:0 0 0 5px;
+}
+
+ul.primary li {
+display:block;
+float:left;
+margin:0 1px -1px;
+}
+
+ul.primary li a {
+background-color:#f5f5f5;
+margin-right:1px;
+display:block;
+float:left;
+height:1.5em;
+line-height:1.5em;
+border-color:#ccc;
+padding:0 10px;
+}
+
+ul.primary li a:hover,ul.primary li a:focus {
+background-color:#eee;
+border-color:#ccc;
+}
+
+ul.primary li.active a,ul.primary li.active a:hover,ul.primary li.active a:focus {
+background-color:#fff;
+border-bottom-color:#fff;
+}
+
+ul.secondary {
+border-bottom:1px solid #ccc;
+margin:1em 0 0;
+padding:0 .3em 1em;
+}
+
+ul.secondary li {
+border-right:0;
+list-style:none;
+padding:0 10px 0 0;
+}
+
+ul.secondary li a:hover,ul.secondary li a.active {
+border-bottom:none;
+text-decoration:underline;
+}
+
+ul.action-links {
+list-style:none;
+margin:20px 0 0;
+}
+
+.field-label {
+font-size:1em;
+font-weight:700;
+font-family:inherit;
+line-height:inherit;
+margin-bottom:0;
+}
+
+.field-type-taxonomy-term-reference {
+margin-bottom:1.5em;
+}
+
+.ia-l .field-type-image figure,.iat-l .field-type-image figure {
+margin:5px 20px 15px 0;
+}
+
+.ia-c .field-type-image figure,.iat-c .field-type-image figure {
+margin:5px auto 15px;
+}
+
+.ia-r .field-type-image figure,.iat-r .field-type-image figure {
+margin:5px 0 15px 20px;
+}
+
+.block-content ul,.block-content ol {
+padding:0 0 0 15px;
+}
+
+#comments {
+margin:1.5em 0;
+}
+
+.indented {
+margin-left:40px;
+}
+
+.form-item input.error,.form-item textarea.error,.form-item select.error {
+border:1px solid #c00;
+}
+
+.form-item .description {
+font-size:.85em;
+}
+
+fieldset {
+border:1px solid #ccc;
+}
+
+a.button {
+-webkit-appearance:button;
+-moz-appearance:button;
+appearance:button;
+}
+
+table {
+width:100%;
+margin:10px 0;
+padding:0;
+}
+
+table.sticky-header {
+z-index:10;
+}
+
+table,td,th {
+vertical-align:middle;
+}
+
+caption,th,td {
+text-align:left;
+}
+
+thead tr {
+font-weight:700;
+background-color:#FFF;
+}
+
+td,th {
+border-bottom:0;
+margin:0;
+padding:5px 7px;
+}
+
+tbody tr {
+border-top:1px solid #ccc;
+}
+
+tr.info,tr.even,tr:nth-child(2n+2) {
+border-bottom:0;
+background-color:#FFF;
+}
+
+tr.odd td.active {
+background-color:#eee;
+}
+
+tr.even td.active {
+background-color:#ebebeb;
+}
+
+#forum td .created,#forum td .posts,#forum td .topics,#forum td .last-reply,#forum td .replies,#forum td .pager {
+white-space:normal;
+}
+
+div.messages {
+margin-bottom:10px;
+margin-top:10px;
+}
+
+div.messages ul {
+margin-top:0;
+margin-bottom:0;
+}
+
+.node-unpublished p.unpublished,.comment-unpublished p.unpublished {
+color:rgba(239,170,170,0.4);
+font-family:Impact,"Arial Narrow",Helvetica,sans-serif;
+font-size:75px;
+font-weight:700;
+height:0;
+line-height:1.2;
+overflow:visible;
+text-align:center;
+text-transform:uppercase;
+word-wrap:break-word;
+margin:0;
+padding:0;
+}
+
+.lt-ie8 .node-unpublished > *,.lt-ie8 .comment-unpublished > * {
+position:relative;
+}
+
+.maintenance-page .container {
+padding:40px 0;
+}
+
+.db-offline .container {
+width:100%;
+max-width:960px;
+margin:0 auto;
+padding:40px 0;
+}
+
+.db-offline div.messages {
+margin:20px 0 0;
+}
+
+.db-offline #content {
+padding:20px 0;
+}
+
+.dev-query {
+background:#eee;
+padding:30px;
+}
+
+#styleguide-header .item-list {
+font-family:inherit;
+min-height:260px;
+width:auto;
+margin:0 20px 20px 0;
+}
+
+#user-login-form .form-item-name,
+#service-as-transfer-node-form .form-item-name,
+#user-login-form .form-item-pass,
+#service-as-transfer-node-form .form-item-pass {
+float:left;
+margin:15px 0 10px;
+padding: 0;
+}
+
+#block-user-login #edit-actions input#edit-submit,
+#service-as-transfer-node-form #edit-actions input#edit-submit,
+#service-as-transfer-node-form #edit-actions input#edit-submit--2 {
+background:url(../images/ok_btn.png) no-repeat;
+width:58px;
+height:29px;
+border:0;
+margin-top:4px;
+}
+
+#block-user-login .item-list,#service-as-transfer-node-form .item-list {
+float:left;
+position:absolute;
+left:37.5%;
+top:113px;
+}
+.front .clearfix .node-readmore {
+  display: none;
+}
+#block-user-login .item-list li,#service-as-transfer-node-form .item-list li {
+display:inline;
+float:left;
+margin:0;
+}
+
+#block-user-login #edit-name,
+#block-user-login #edit-pass,
+section#block-user-login #service-as-transfer-node-form #edit-name,
+#service-as-transfer-node-form #edit-pass,
+#service-as-transfer-node-form  .form-item-name input{
+height:20px;
+border-radius:0;
+width:145px;
+background:#F4F4F4;
+border:none;
+margin-left:10px;
+padding:5px;
+}
+
+#user-login-form .item-list li.first a,#service-as-transfer-node-form .item-list li.first a {
+border-right:1px solid #548FB1;
+padding-right:7px;
+}
+
+#user-login-form .item-list li.first,#service-as-transfer-node-form item-list li.first {
+margin-right:7px;
+}
+
+#user-login-form .item-list li a,#service-as-transfer-node-form .item-list li a {
+color:#548FB1;
+font-size:11px;
+}
+
+#user-login-form #edit-actions,#service-as-transfer-node-form #edit-actions {
+float:left;
+}
+
+#user-login-form #edit-actions input,#service-as-transfer-node-form #edit-actions input {
+text-indent:-9999px;
+blue_titlefont-size:35px;
+float:left;
+margin-left:20px;
+}
+#service-as-transfer-node-form .item-list {
+  display: none;
+}
+.blue_bullet {
+float:left;
+color:#014f7d;
+padding:10px 23px 10px 10px;
+font-size: 42px;
+}
+
+.blue_circle {
+background:url(../images/circle.png) 242px 43px no-repeat;
+}
+
+.blue_circle2 {
+background:url(../images/circle.png) 310px 43px no-repeat;
+}
+
+#user-login-form .form-item-name {
+margin-right:10px;
+}
+
+#block-block-4 a,#block-block-4 p {
+color:#4D4D4D;
+}
+
+#block-block-2 h2.block-title {
+font-size:14px;
+color:#4D4D4D;
+}
+
+#block-block-2 p {
+color:#666;
+}
+
+#block-menu-menu-footer-menu li {
+float:left;
+margin-right:25px;
+}
+
+#footer .region-inner {
+width:940px;
+margin:0 auto;
+padding:20px 0;
+}
+
+.breadcrumb {
+float:left;
+background:#EDEDED;
+width:900px;
+border-radius:5px;
+margin:0 10px 20px;
+padding:10px;
+}
+
+.singlearrow {
+padding:0 5px;
+}
+
+#block-block-6 {
+float:left;
+width:421px;
+background:url(../images/gre_box.png) no-repeat;
+margin-right:40px;
+height:313px;
+}
+
+#block-block-5 {
+float:left;
+background:url(../images/blue_box.png) no-repeat;
+width:461px;
+height:313px;
+position:inherit;
+}
+
+#block-block-5 .content,#block-block-6 .content {
+float:left;
+padding:0 30px 20px;
+}
+
+#block-block-6 h2.block-title {
+font-size:22px;
+padding-bottom:15px;
+font-weight:400;
+}
+
+#block-block-6 .transfericon,#block-block-6 div.extratime {
+background:url(../images/nombre_icon.png) no-repeat center left;
+}
+
+#block-block-6 .fromicon
+/*#block-block-6 .departtime*/ {
+background:url(../images/depart_icon.png) no-repeat center left;
+}
+
+#block-block-6 .typeicon,#block-block-6 .regionicon,#block-block-6 .transfericon,#block-block-6 .fromicon,#block-block-6 .toicon,#block-block-6 .des,#block-block-6 div.extratime,#block-block-6 .departtime,#block-block-6 .arrivetime {
+float:left;
+width:100%;
+margin-bottom:10px;
+}
+
+#block-block-6 #driveratd .regionicon,#block-block-6 #driveratd .transfericon,#block-block-6 #driveratd .fromicon,#block-block-6 #driveratd .toicon,#block-block-6 #driveratd .des,#block-block-6 #driveratd div.extratime,#block-block-6 #driveratd .departtime,#block-block-6 #driveratd .arrivetime {
+margin-bottom:4px;
+}
+
+#block-block-6 .departtime select,#block-block-6 .arrivetime select {
+/*width:143px;*/
+width: 70px;
+}
+
+#block-block-6 .arrivetime select.arrmins,#block-block-6 .departtime select.departmins {
+margin-left:15px;
+}
+
+#block-block-6 select {
+display:inline-block;
+-webkit-appearance:none;
+-moz-appearance:none;
+appearance:none;
+width:310px;
+margin-left:40px;
+background:url(../images/arrow.png) no-repeat 98% 50% #F0F0F0;
+border:1px solid #999;
+box-shadow:1px 1px 4px #F0F0F0;
+padding:5px;
+}
+.departtime label{
+  width: 85px;
+  margin-top: 5px;
+}
+.departtime{
+  margin-top: 10px;
+}
+.des{
+  background: url("../images/arrivee_icon.png") no-repeat scroll left center transparent;
+}
+ .ddesg {
+  margin-top: 10px;
+  -moz-appearance: none;
+    background: url("../images/arrow.png") no-repeat scroll 98% 50% #F0F0F0;
+    border: 1px solid #999999;
+    box-shadow: 1px 1px 4px #F0F0F0;
+    display: inline-block;
+    margin-left: 40px;
+    padding: 5px;
+    width: 310px;
+ }
+.departhours,
+.arr-day-night,
+.arrparthours,
+.drop-day-night
+{
+  margin-left: 15px !important;
+}
+#block-block-6 h2.block-title,#block-block-5 h2.block-title {
+color:#000;
+padding:10px 30px 5px;
+}
+
+input.watermark {
+color:#999;
+}
+
+#block-block-5 .body {
+color:#FFF;
+font-size:12px;
+}
+
+.not-front #page .breadcrumb {
+margin-top:20px;
+}
+
+.Transfer select {
+width:150px;
+}
+
+.Transfer label {
+margin-top:5px;
+}
+
+.searchsub {
+float:right;
+clear:both;
+background:url(../images/search_btn.png) no-repeat;
+width:127px;
+height:38px;
+text-indent:-999px;
+border:none;
+margin-right:10px;
+padding:2px 4px;
+}
+
+.car-image {
+width:22%;
+float:left;
+padding-top:25px;
+}
+
+.title-desc {
+width:35%;
+padding-right:80px;
+float:left;
+padding-top:25px;
+}
+
+.check-out {
+width:25%;
+text-align:center;
+padding-top:25px;
+float:left;
+}
+
+.errmes {
+font-size:12px;
+color:red;
+}
+
+#block-block-7 {
+float:left;
+width:445px;
+margin-right:20px;
+}
+
+#block-block-7 h2.block-title,#block-block-8 h2.block-title {
+font-size:25px;
+color:#3F92C4;
+border-bottom:5px solid #014F7D;
+margin-bottom:30px;
+font-weight:400;
+}
+
+#block-block-7 .villes {
+clear:both;
+margin-bottom:20px;
+float:left;
+width:100%;
+}
+
+#block-block-8 .services {
+clear:both;
+margin-bottom:10px;
+float:left;
+width:100%;
+border-bottom:3px solid #D5E7F3;
+padding-bottom:10px;
+}
+
+#block-block-8 .last {
+border-bottom:none!important;
+}
+
+#block-block-7 li {
+list-style-image:url(../images/circle.png);
+}
+
+#block-block-7 .villes .image,#block-block-8 .services .image {
+float:left;
+margin-right:15px;
+}
+
+#block-block-8 {
+float:left;
+width:460px;
+}
+
+#block-block-7 .villes .title,#block-block-8 .services .title {
+color:#01507B;
+font-size:18px;
+}
+
+#block-block-7 .villes .summary {
+float:left;
+margin-left:15px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav fieldset {
+border:none;
+width:400px;
+padding:0!important;
+}
+
+.page-checkout #service-as-transfer-node-form-trav fieldset.sectionwrap {
+border-width:0;
+padding:5px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav legend {
+font:bold 16px Arial;
+color:#004E7C;
+display:none;
+}
+.page-checkout #node_service_as_transfer
+{
+width: 400px;
+margin: 0 auto;
+}
+.page-checkout div.stepsguide {
+width:400px;
+overflow:hidden;
+margin-bottom:15px;
+cursor:pointer;
+margin: 0 auto;
+}
+
+.page-checkout div.stepsguide .step {
+width:120px;
+font:bold 24px Arial;
+float:left;
+}
+
+.page-checkout div.stepsguide .disabledstep {
+color:#C4C4C4;
+}
+
+.page-checkout div.stepsguide .disabledstep .smalltext {
+color:#C4C4C4!important;
+}
+
+.page-checkout div.stepsguide .step .smalltext {
+font-size:11px;
+font-weight:400;
+color:#004E7C;
+}
+
+.page-checkout div.formpaginate {
+width:400px;
+overflow:hidden;
+font-weight:700;
+text-align:center;
+margin-top:1em;
+margin: 0 auto;
+}
+.page-checkout #filData{
+  width:400px;
+  margin: 0 auto;  
+}
+
+.page-checkout div.formpaginate .prev,.page-checkout div.formpaginate .next {
+border-radius:5px;
+-webkit-border-radius:5px;
+-moz-border-radius:5px;
+background:#2283BC;
+color:#FFF;
+cursor:pointer;
+padding:2px 8px;
+font-size: 11px;
+}
+
+
+.page-checkout #service-as-transfer-node-form-trav .luggage {
+float:left;
+font-size:12px;
+width:105px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .prod_bag {
+width:50px;
+height:18px;
+overflow-y:hidden;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .inbag {
+float:left;
+padding-right:24px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .inarriv {
+float:right;
+width:180px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .clstdfirst {
+width:165px!important;
+padding:5px!important;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .clsplsecond {
+padding:5px!important;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .dmy {
+margin-left:1px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav tr {
+border-top:0!important;
+background:none!important;
+}
+
+.page-checkout #service-as-transfer-node-form-trav tbody tr {
+border-top:0!important;
+}
+
+.page-checkout #service-as-transfer-node-form-trav td {
+vertical-align:top;
+}
+
+.page-checkout #service-as-transfer-node-form-trav #step_0 #luggagetd{
+vertical-align:bottom;
+}
+
+.page-checkout #service-as-transfer-node-form-trav table {
+border:none!important;
+border-collapse:separate;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .redvalid {
+border:red solid 1px;
+}
+
+#block-block-4 .apps-logo {
+float:left;
+margin-right:20px;
+}
+
+#block-block-4 .footer-logo .contact {
+margin:10px 0 0 45px;
+}
+
+#block-menu-menu-footer-menu li.first {
+list-style:none;
+}
+
+.view-service-as-transfer-results .info ,
+.view-driver-at-disposal-result .info,
+.view-meet-and-greet-results .info{
+float:left;
+width:100%;
+}
+
+.view-service-as-transfer-results .bags-info,
+.view-driver-at-disposal-result .bags-info,
+.view-meet-and-greet-results .bags-info{
+background:url(../images/icon_02.png) no-repeat;
+width:44px;
+height:29px;
+float:left;
+margin-left:10px;
+}
+
+.view-service-as-transfer-results .pass-info ,
+.view-driver-at-disposal-result .pass-info,
+.view-meet-and-greet-results .pass-info{
+background:url(../images/icon_01.png) no-repeat;
+width:44px;
+height:29px;
+float:left;
+}
+
+.view-service-as-transfer-results .bags-info .value,
+.view-driver-at-disposal-result .bags-info .value,
+.view-meet-and-greet-results .bags-info .value{
+width:20px;
+padding-top:5px;
+}
+
+.view-service-as-transfer-results .pass-info .value ,
+.view-driver-at-disposal-result .pass-info .value ,
+.view-meet-and-greet-results .pass-info .value{
+width:15px;
+padding-top:5px;
+}
+
+.view-service-as-transfer-results .check-out .price,.view-meet-and-greet-results .check-out .price,.view-driver-at-disposal-result .check-out .price {
+color:#3F92C4;
+font-size:25px;
+text-align:left;
+width:100%;
+}
+
+.view-service-as-transfer-results thead td.history-lt,.view-meet-and-greet-results thead td.history-lt,.view-driver-at-disposal-result thead td.history-lt {
+background:url(../images/blue_bg_lt.png) no-repeat #2283BC;
+color:#FFF;
+border-radius:5px 0 0 5px;
+-webkit-border-radius:5px 0 0 5px;
+-moz-border-radius:5px 0 0 5px;
+}
+
+.view-service-as-transfer-results thead td.history-rt,.view-meet-and-greet-results thead td.history-rt,.view-driver-at-disposal-result thead td.history-rt {
+background:url(../images/blue_bg_rt.png) no-repeat #2283BC;
+color:#FFF;
+border-radius:0 5px 5px 0;
+-webkit-border-radius:0 5px 5px 0;
+-moz-border-radius:0 5px 5px 0;
+}
+
+/*.page-checkout #service-as-transfer-node-form a .compInfo,*/
+.page-checkout #service-as-transfer-node-form  .compInfo,
+.page-checkout #service-as-transfer-node-form a .remove,.page-checkout #service-as-transfer-node-form a .btn {
+float:left;
+background:none repeat scroll 0 0 #2283BC;
+border-radius:5px 5px 5px 5px;
+color:#FFF;
+cursor:pointer;
+font-weight:700;
+text-decoration:none;
+padding:2px 5px;
+font-size: 11px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav fieldset .submit {
+float:right;
+background:none repeat scroll 0 0 #2283BC;
+border-radius:5px 5px 5px 5px;
+color:#FFF;
+cursor:pointer;
+text-decoration:none;
+padding:2px 8px;
+}
+
+.page-checkout #service-as-transfer-node-form .cartErrMsg {
+display:none;
+margin-bottom:10px;
+margin-top:10px;
+background-color:#FEF5F1;
+color:#8C2E0B;
+background-image:url(../../../../../misc/message-24-error.png);
+background-position:8px 8px;
+background-repeat:no-repeat;
+border:1px solid red;
+border-color:#ED541D;
+padding:10px 10px 10px 50px;
+}
+
+.page-checkout #service-as-transfer-node-form td {
+padding-top:10px;
+}
+
+.page-checkout #service-as-transfer-node-form .completeDiv {
+padding-top:10px;
+float:right;
+}
+
+.page-checkout #service-as-transfer-node-form a .btn {
+margin-right:5px;
+margin-top:5px;
+}
+
+.page-checkout #service-as-transfer-node-form .compDivHlt {
+border:3px solid red;
+border-radius:8px 8px 8px 8px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav fieldset #addmoreDiv,.page-checkout #service-as-transfer-node-form-trav fieldset #addmoreoutDiv {
+border:1px solid #CCC;
+margin-bottom:10px;
+padding-bottom:5px;
+padding-right:10px;
+text-align:right;
+}
+
+.view-service-as-transfer-results .title-desc a,
+.view-driver-at-disposal-result .title-desc a {
+font-size:14px;
+color:#2383BD;
+font-weight:700;
+text-decoration:none;
+}
+
+.view-service-reservation-results,.view-meet-reservation-results,.view-driver-reservation-results {
+margin-top:10px;
+border-left:1px solid #CCC;
+padding-left:10px;
+float:left;
+}
+
+.view-service-reservation-results .blue-overlay,.view-meet-reservation-results .blue-overlay,.view-driver-reservation-results .blue-overlay {
+background:#2383BD;
+padding:5px;
+}
+
+.view-service-reservation-results .blue-overlay a,.view-meet-reservation-results .blue-overlay a,.view-driver-reservation-results .blue-overlay a {
+color:#FFF;
+font-size:14px;
+text-transform:uppercase;
+font-weight:400;
+text-decoration:none;
+}
+
+.view-service-as-transfer-results tbody,.view-meet-and-greet-results tbody,.view-driver-at-disposal-result tbody {
+float:left;
+margin-top:20px;
+}
+
+.region-sidebar-second {
+margin-left:-26%!important;
+}
+
+.view-service-reservation-results .views-row,.view-meet-reservation-results .views-row,.view-driver-reservation-results .views-row {
+float:left;
+margin-bottom:30px;
+}
+
+.view-service-reservation-results .views-field-field-meet-image .field-content,.view-service-reservation-results .views-field-field-driver-image .field-content,.view-meet-reservation-results .views-field-field-car-image .field-content,.view-meet-reservation-results .views-field-field-driver-image .field-content,.view-driver-reservation-results .views-field-field-meet-image .field-content,.view-driver-reservation-results .views-field-field-car-image .field-content {
+line-height:0;
+}
+
+.view-service-reservation-results .blue-overlay a:hover,.view-meet-reservation-results .blue-overlay a:hover,.view-driver-reservation-results .blue-overlay a:hover,.view-service-as-transfer-results .title-desc a:hover,.view-meet-and-greet-results .title-desc a:hover,.view-driver-at-disposal-result .title-desc a:hover {
+background:none;
+}
+
+.view-service-as-transfer-results table,.view-meet-reservation-results table,.view-driver-at-disposal-result table {
+width:689px;
+}
+
+.car-image img {
+width:140px;
+height:105px;
+border-radius:10px;
+-moz-border-radius:10px;
+-webkit-border-radius:10px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .addMoreFields,.page-checkout #service-as-transfer-node-form-trav .removeFields {
+background:none repeat scroll 0 0 #bbbbbb;
+border-radius:5px 5px 5px 5px;
+color:#FFF;
+cursor:pointer;
+font-weight:300;
+text-decoration:none;
+padding:2px 8px;
+font-size: 11px;
+}
+
+.page-checkout div.ctools-modal-content .modal-header {color: #004E7C;}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon {
+vertical-align:bottom;
+padding-bottom:3px;
+cursor:pointer;
+font-size: 11px;
+}
+
+.page-payment #content {
+width:100%!important;
+}
+
+.page-payment #content fieldset {
+border:none!important;
+}
+
+fieldset#edit-autoassignrole-user,#edit-account .form-item-mail .description {
+width:51.5%;
+}
+
+fieldset#edit-autoassignrole-user .fieldset-legend,fieldset#edit-autoassignrole-user .form-item-user-roles .description {
+display:none!important;
+}
+
+.page-user input.form-text,
+.page-user #service-as-transfer-node-form #edit-pass{
+background:none repeat scroll 0 0 #F4F4F4;
+border:1px solid #CCCCCC;
+border-radius:0 0 0 0;
+height:20px;
+margin-left:10px;
+margin-top:2px;
+width:328px!important;
+padding:5px;
+}
+
+.page-user select {
+background:none repeat scroll 0 0 #F4F4F4;
+border:1px solid #CCCCCC;
+border-radius:0 0 0 0;
+height:30px;
+margin-left:10px;
+margin-top:2px;
+width:145px;
+padding:5px;
+}
+
+.page-user-register select {
+  width:340px;
+}
+
+.page-user-register label,.page-user label {
+float:left;
+width:280px;
+}
+
+.page-user-register .fieldset-wrapper label {
+width:230px;
+}
+
+.page-user-register .form-type-password {
+width:95%;
+float:left;
+}
+
+.page-user-register .password-strength {
+float:right;
+margin-top:0;
+width:17em;
+}
+
+.page-user-register #edit-user-roles {
+margin-left:265px;
+}
+
+div.password-confirm {
+margin-top:0;
+}
+
+html,tr.odd {
+background:#fff;
+}
+
+#header-wrapper,#footer-wrapper {
+background:rgba(255,192,203,0.5);
+}
+
+#branding,#block-block-2,#block-menu-menu-footer-menu,.front #content .block-system,#driveratd .departtime label,.page-checkout #service-as-transfer-node-form-trav .arriv_tm,.view-service-as-transfer-results .check-out .cart,.view-meet-and-greet-results .check-out .cart,.view-driver-at-disposal-result .check-out .cart,.page-user-register .field-type-text {
+float:left;
+}
+
+#site-name,#site-slogan,#page-title,.search-results,ul.menu li,.item-list ul.pager li,.block ul.pager li,.block-title,.node .node-title,#comments h2.comment-title,#comments h2.comment-form,.comment-title,.password-parent,.confirm-parent,.maintenance-page #site-name,.maintenance-page #page-title {
+margin:0;
+}
+
+#site-name a:link,#site-name a:visited,a {
+text-decoration:none;
+}
+
+#site-name a:hover,#site-name a:focus,a:hover,a:focus {
+text-decoration:underline;
+}
+
+ul.links,.nav ul,.nav ul.menu,#breadcrumb ol,.field-type-taxonomy-term-reference.field-label-inline .field-items,.block-content li,#admin-menu {
+margin:0;
+padding:0;
+}
+
+ul.links li,.field-type-taxonomy-term-reference.field-label-inline .field-item {
+display:inline;
+list-style:none;
+padding:0 10px 0 0;
+}
+
+.region-header,#block-block-6 #transger-section,#messages,.page-user-register .region form .form-item-mail,.page-user-register .form-type-password-confirm .description {
+clear:both;
+}
+
+.nav .block,ul.sf-menu {
+margin-bottom:0;
+}
+
+ul.sf-menu li:hover,ul.sf-menu li.sfHover,ul.sf-menu a:focus,ul.sf-menu a:hover,ul.sf-menu a:active,#skip-link a:hover,#skip-link a:focus,#skip-link a:active {
+outline:0;
+}
+
+.block-superfish ul,.block-superfish li {
+margin:0!important;
+padding:0!important;
+}
+
+.sf-vertical,.sf-vertical li,.page-checkout #content,.page-user .form-item,.page-user-register .form-type-password-confirm,.page-user-register #edit-autoassignrole-user {
+width:100%;
+}
+
+.sf-vertical li a,.sf-menu.sf-style-default a,#styleguide-header {
+padding:0 10px;
+}
+
+ul.menu,ul.menu ul {
+padding-left:15px;
+}
+
+#breadcrumb .with-breadcrumb-label ol,.container-inline div,.container-inline label {
+display:inline;
+}
+
+ul.pager li.pager-current,.form-item label {
+font-weight:700;
+}
+
+#skip-link a,#skip-link a:link,#skip-link a:visited {
+background:rgba(0,0,0,0.6);
+color:#fff;
+display:block;
+line-height:2;
+text-align:center;
+text-decoration:none;
+padding:0;
+}
+
+.block,.node,.comment {
+margin-bottom:20px;
+}
+
+#block-user-login,.welcome_message,#block-block-4,#block-block-4 .footer-logo,.page-checkout #service-as-transfer-node-form .compDiv {
+float:right;
+}
+
+.new,.marker,.form-required {
+color:#c00;
+}
+
+table,thead,tbody,tr,th,td,.page-checkout #service-as-transfer-node-form fieldset,.page-user-register fieldset {
+border:none;
+}
+
+#block-user-login h2.block-title,
+#block-user-login .form-item-name label,
+#block-user-login .form-item-pass label,
+#block-system-powered-by,
+.front .article,.front .item-list,
+.feed-icon,#first-time,.page-checkout #service-as-transfer-node-form-trav fieldset #dest_addr_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #pick_addr_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #endserv_addr_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #name_addr_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #dropoffout_addr_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #pickout_addr_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #airline_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #airlineout_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #odd_bag_Others,
+.page-checkout #service-as-transfer-node-form-trav fieldset #no_people_Others
+{
+display:none;
+}
+
+.page-checkout #service-as-transfer-node-form-trav fieldset #no_people_OthersTxt
+{margin-top: 3px;}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon{
+    position:relative; /*this is the key*/
+    background-color:#ccc;
+    color:#000;    
+    text-decoration:none;
+    z-index:100!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon span{display: none}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon:hover span{ /*the span will display just on :hover state*/
+    display:block;
+    position:absolute;
+    top:1.5em; left:-14em; width:auto;
+    border:1px solid #cccccc;
+    background-color:#E7E7E7; color:#666666;
+    text-align: left;
+    padding: 5px;
+    z-index:100!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon{background-color:#ffffff;z-index:25;}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon2{
+    position:relative; /*this is the key*/
+    background-color:#ccc;
+    color:#000;   
+    font-size: 11px;
+    text-decoration:none;
+    z-index:99!important;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon2 span{display: none}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon2:hover span{ /*the span will display just on :hover state*/
+    display:block;
+    position:absolute;
+    top:1.5em; left:-14em; width:auto;
+    border:1px solid #cccccc;
+    background-color:#E7E7E7; color:#666666;
+    text-align: left;
+    padding: 5px;
+    z-index:99!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon2{background-color:#ffffff;z-index:25;}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon3{
+    position:relative; /*this is the key*/
+    background-color:#ccc;
+    color:#000;    
+    text-decoration:none;
+    z-index:98!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon3 span{display: none}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon3:hover span{ /*the span will display just on :hover state*/
+    display:block;
+    position:absolute;
+    top:1.5em; left:-14em; width:auto;
+    border:1px solid #cccccc;
+    background-color:#E7E7E7; color:#666666;
+    text-align: left;
+    padding: 5px;
+    z-index:98!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon3{background-color:#ffffff;z-index:25;}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon4{
+    position:relative; /*this is the key*/
+    background-color:#ccc;
+    color:#000;    
+    text-decoration:none;
+    z-index:97!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon4 span{display: none}
+
+.page-checkout #service-as-transfer-node-form-trav .infoIcon4:hover span{ /*the span will display just on :hover state*/
+    display:block;
+    position:absolute;
+    top:1.5em; left:-14em; width:auto;
+    border:1px solid #cccccc;
+    background-color:#E7E7E7; color:#666666;
+    text-align: left;
+    padding: 5px;
+    z-index:97!important;
+}
+.page-checkout #service-as-transfer-node-form-trav .infoIcon4{background-color:#ffffff;z-index:25;}
+
+
+
+
+
+
+#block-menu-menu-footer-menu li a,#block-block-4 span,.breadcrumb a {
+color:#004E7C;
+}
+
+#block-block-6 .typeicon,#block-block-6 .regionicon {
+background:url(../images/service_icon.png) no-repeat scroll 3% center transparent;
+}
+
+#block-block-6 .toicon {
+background:url(../images/arrivee_icon.png) no-repeat center left;
+}
+
+#block-block-5 .title,.view-service-reservation-results .blue-overlay p,.view-meet-reservation-results .blue-overlay p,.view-driver-reservation-results .blue-overlay p {
+color:#FFF;
+}
+
+.view-service-as-transfer-results .check-out .cart .add,.view-meet-and-greet-results .check-out .cart .add,.view-driver-at-disposal-result .check-out .cart .add,.view-service-as-transfer-results .check-out .cart .remove,.view-meet-and-greet-results .check-out .cart .remove,.view-driver-at-disposal-result .check-out .cart .remove {
+background:none repeat scroll 0 0 #2283BC;
+border-radius:5px 5px 5px 5px;
+color:#FFF;
+cursor:pointer;
+text-decoration:none;
+font-weight:700;
+margin-top:10px;
+padding:2px 5px;
+}
+
+.view-service-as-transfer-results .check-out .cart a,.view-meet-and-greet-results .check-out .cart a,.view-driver-at-disposal-result .check-out .cart a,.page-checkout #service-as-transfer-node-form .compDiv a {
+text-decoration:none!important;
+}
+
+/*.region-sidebar-second .block-title
+{
+   background: url("../images/blue_bg_lt.png") no-repeat scroll 0 0 #2283BC;
+    border-radius: 5px 5px 5px 5px;
+    color: #FFFFFF;
+}
+.region-sidebar-second .block-inner
+{
+    border-bottom:solid 1px #2283BC;
+}*/
+ .node-type-network .content-inner
+ {width: 45%;}
+ 
+ .node-type-network .region-sidebar-second {
+    margin-left: -25%;
+    width: 43%;
+}
+.node-type-network .region-sidebar-second {
+    margin-left: -43% !important;
+}
+/*.view-og-members table.views-table
+{ border: 1px solid #CCCCCC;}*/
+
+.view-og-members table.views-table thead tr th,
+.view-network-list table.views-table thead tr th
+{background-color: #F5F5F5;border: 1px solid #FFFFFF;}
+.page-network-list #content
+{width: 100%;}
+
+.view-network-list .add{
+ background: none repeat scroll 0 0 #2283BC;
+}
+
+.view-og-members table.views-table thead tr th
+{background-color: #F5F5F5;border: 1px solid #FFFFFF;}
+.btn{
+background: none repeat scroll 0 0 #2283BC;
+
+    border-radius: 5px 5px 5px 5px;
+    color: #FFFFFF;
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 10px;
+    padding: 2px 5px;
+
+    float: right;
+    text-decoration: none;}
+
+.view-network-list .view-content
+{clear: both;
+
+    text-decoration: none;
+    text-align: center;
+}
+
+.btnLink{text-decoration: none!important;}
+.page-list-head-quarters-members #content{width: 100%}
+.group-context-node #main-content-header,
+.group-context-node .field-name-field-network-name
+{display: none;}
+.group-context-node .contNorm{font-weight: normal!important;}
+.node-type-network #Ogaddpeople,
+.node-type-group #Ogaddpeople,
+.node-type-travel-agency #Ogaddpeople
+{background: none repeat scroll 0 0 #2283BC;
+    border-radius: 5px 5px 5px 5px;
+    color: #FFFFFF;
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 10px;
+    padding: 2px 5px;
+    text-decoration: none;
+    margin-top: -30px;
+    float:right;
+}
+.view-og-nodes .view-header p a,
+.view-og-nodes .view-empty a,
+.view-agency-list .view-header p a,
+.view-agency-list .view-empty a
+{    
+    background: none repeat scroll 0 0 #2283BC;
+    border-radius: 5px 5px 5px 5px;
+    color: #FFFFFF;
+    cursor: pointer;
+    font-weight: 700;
+    margin-top: 10px;
+    padding: 2px 5px;
+    text-decoration: none;
+    float: right;
+    margin-top: -20px;
+}
+
+
+.page-dashboard #homebox #homebox-buttons
+{display: none;}
+
+.page-dashboard #main-content #content
+{width: 100%;}
+.page-create-travel-agency #content, .page-create-travel-agent #content
+{width: 100%;}
+
+/*#loader {
+    background-color: #777777;
+    cursor: pointer;
+    height: 1826px;
+    opacity: 0.7;
+    display: none;
+    left: 0;
+    position: absolute;
+    top: 0;
+    width: 100%;
+    z-index: 1100;
+}*/
+.page-checkout #service-as-transfer-node-form-trav #submitTrav{
+float: right; visibility: visible;background: none repeat scroll 0 0 #2283BC;
+    border-radius: 5px 5px 5px 5px;
+    color: #FFFFFF;
+    cursor: pointer;
+    padding: 2px 8px;
+}
+
+.page-checkout #service-as-transfer-node-form-trav .calimg{
+    border: none;
+    float: right;
+    /* margin-right: 95px;*/
+    margin-left: 5px;
+    float: left;
+    padding-top: 3px !important;
+    cursor: pointer;
+}
+.page-checkout #service-as-transfer-node-form-trav #service_day,
+.page-checkout #service-as-transfer-node-form-trav #serv_day,
+.page-checkout #service-as-transfer-node-form-trav #arriv_day
+{ float: left;}
+.page-checkout #service-as-transfer-node-form-trav #arriv_calimg,
+.page-checkout #service-as-transfer-node-form-trav #serv_calimg,
+.page-checkout #service-as-transfer-node-form-trav #service_calimg
+{display:none; }
+
+.page-checkout #service-as-transfer-node-form-trav #extra_charge
+{
+    display: none; border: 1px dashed #FFA500; padding: 5px;font-size: 11px; color: #004E7C;
+}
+.page-checkout #service-as-transfer-node-form-trav #extra_charge .unilist li span {
+    float: left;
+    width: 2em;
+}
+.page-checkout #service-as-transfer-node-form-trav #extra_charge .unilist li .cross {
+    color: red;
+}
+.page-checkout #service-as-transfer-node-form-trav #extra_charge .unilist li .tick {
+    color: green;
+}
+.page-checkout #service-as-transfer-node-form-trav #extra_charge .unilist li {
+    line-height: 1.5em;
+    list-style: none outside none;
+}
+.page-checkout #service-as-transfer-node-form-trav #extra_charge .unilist
+{
+    margin: 0 auto;
+    padding-left: 5px;
+}
+.page-checkout .fLeft{float: left;}
+.page-checkout .fLeftbag{float: left;padding: 5px 0px 0px 5px;}
+.page-checkout .cboth{clear: both;}
+
+.page-checkout #service-as-transfer-node-form-trav #driveratd #searchDiv .searchsub{
+    float:right;
+    margin-top: 0px!important;
+}
+.page-checkout #service-as-transfer-node-form-trav #driveratd #msgDiv{
+    float:left;
+}

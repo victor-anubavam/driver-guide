@@ -1,0 +1,245 @@
+<?php
+function member_import_menu () {
+    $items = array();
+    $items['member-import'] = array(
+    'title'             => 'Member Import',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('member_import_upload'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'member_import.inc',
+    );
+    
+    return $items;
+}
+
+function member_import_form_alter(&$form, &$form_state, $form_id) {
+
+  if($form_id=='member_import_upload') {
+   
+  }
+}
+
+
+function member_import_upload_validate (&$form, &$form_state) {   
+
+
+    if($form['#form_id']=='member_import_upload')    {
+     
+      if($_FILES['memberupload']['name']=='')
+        {
+            form_set_error('file', t('Select a file to upload member.'));
+        }
+        else if($_FILES['memberupload']['type']!='text/csv')
+        {
+            form_set_error('file', t('Select a CSV formated file.'));
+        }
+        else if($_FILES["memberupload"]["error"] > 0) {
+            form_set_error('file', t('file error - '.$_FILES["file"]["error"]));
+        }
+        if(!isset($form['network']['#value']) || trim($form['network']['#value'])=='')
+        {
+            form_set_error('file', t('Select a network for member.'));
+        }
+        else if(trim($form['network']['#value'])=='00' && trim($_REQUEST['network_name_others'])=='')
+        {
+            form_set_error('file', t('please fill the network.'));
+        }
+    }
+}
+
+function member_import_upload_submit(&$form,&$form_state) {
+        global $base_path;       
+        require_once DRUPAL_ROOT.'/'.variable_get('password_inc', 'includes/password.inc');
+        require_once DRUPAL_ROOT.'/'.variable_get('form.inc', 'includes/form.inc');
+        $storagename = date("m-D-Y").'-'.time().'.csv';
+        $new_file_name =  $_SERVER['DOCUMENT_ROOT'].$base_path."sites/default/files/csvupload/".$storagename;
+        
+       // $new_file_name =  $_SERVER['DOCUMENT_ROOT'].$base_path."sites/default/files/csvupload/123456.csv";
+      //  $file = file_save_upload('upload', array('file_validate_extensions' => array('csv'),));      
+        $tmp_name = $_SERVER['DOCUMENT_ROOT'].drupal_realpath($file->uri);
+   
+        if (!is_writable(dirname($new_file_name))) {        
+            echo dirname($new_file_name) . ' must writable!!!';
+        } else {
+        copy($_FILES['memberupload']['tmp_name'], $_SERVER['DOCUMENT_ROOT']."/sites/default/files/csvupload/".$storagename);
+        
+        if ($file = fopen($new_file_name,"r")) {
+            $firstline = fgets ($file,4096);
+            
+                //Gets the number of fields, in CSV-files the names of the fields are mostly given in the first line
+            $num = strlen($firstline) - strlen(str_replace(";", "", $firstline));            
+                //save the different fields of the firstline in an array called fields
+            $fields = array();
+            $fields = explode(";", $firstline, ($num+1));
+
+            $line = array();
+            $i = 0;
+
+                //CSV: one line is one record and the cells/fields are seperated by ";"
+                //so $dsatz is an two dimensional array saving the records like this: $dsatz[number of record][number of cell]
+            while ( $line[$i] = fgets ($file, 4096) ) {
+                $dsatz[$i] = array();
+                $dsatz[$i] = explode( ";", $line[$i], ($num+1) );
+                $i++;
+            }
+           
+            foreach ($dsatz as $key => $number) { 
+                        //new table row for every record
+                foreach ($number as $k => $content) {
+                               
+                    $string = $content;
+                    $pattern = '"';
+                    $start = 0;
+                    $arr=array();
+                    $inc=0;
+
+                    while(($newLine = strpos($string, $pattern, $start)) !== false) {
+                        $start = $newLine + 1;
+
+                        $arr[$inc]=$newLine;
+                        $sstr='';
+                        $rsstr='';
+
+                        if($inc%2==1)
+                        {
+                            $sstr=substr($string, $arr[$inc-1], (($arr[$inc]+1)-$arr[$inc-1]));
+                            $rsstr=str_replace(',', '?#', $sstr);               
+                            $rsstr=str_replace('"', '', $rsstr);                
+                            $string=str_replace($sstr, $rsstr, $string);
+                        }
+                        $inc++;
+                    }
+                    $fields = explode( ",", $string );
+                    // Fetching colum and rows from uploaded csv file
+               //   echo "<pre>";print_r($fields);echo "</pre>";
+                 // exit;
+                    foreach ($fields as $key => $cell) {                        
+                        $nodeArry = array();
+                        $nodeArry['firstname'] = str_replace('?#', '',$fields[0]);
+                        $nodeArry['lastname'] = str_replace('?#', '',$fields[1]);
+                        $nodeArry['position'] = $fields[2];
+                        $nodeArry['membername'] = str_replace('?#', '',$fields[3]);
+                        $nodeArry['address'] = $fields[4];                        
+                        if(!empty($fields[5])) {
+                        $nodeArry['address'].= ",".$fields[5];    
+                        }
+                        $nodeArry['address'] = str_replace('?#', '',$nodeArry['address']);
+                        $nodeArry['city'] = $fields[6];
+                        $nodeArry['state'] = $fields[7];
+                        $nodeArry['zipcode'] = $fields[8];
+                        $nodeArry['country'] = $fields[9];
+                        $nodeArry['telephone'] = $fields[10];
+                        $nodeArry['fax'] = $fields[11];
+                        $nodeArry['emailid'] = $fields[12];
+                        //$nodeArry['webpage'] = $fields[13];
+                        //$nodeArry['Catégories'] = $fields[14];
+                    }
+                      // creating user
+           //   echo "<pre>";print_r($nodeArry);
+               //  exit;
+                   if(strstr($nodeArry['emailid'], '@')) {
+                  //  echo "E-mailid--".$nodeArry['emailid']."<br>";
+                   
+                          drupal_set_message("Member - ".$nodeArry['membername']." Added");
+                            $account = new stdClass;
+                            $account->is_new = TRUE;
+                            $email  = db_query("select mail from users where mail ='".$nodeArry['emailid']."'")->fetchField();
+                            
+                            if(empty($email)) {
+                                
+                            $username  = db_query("select mail from users where name ='".str_replace("'","\'",$nodeArry['firstname'])."'")->fetchField();                           
+                            
+                            if(empty($username)) {
+                             $account->name = $nodeArry['firstname'];//$node->field_uname['und'][0]['value'];
+                            } else {
+                             $account->name = $nodeArry['firstname'].rand();//$node->field_uname['und'][0]['value'];
+                            }                            
+                            $account->pass = user_hash_password($account->name);
+                            $account->mail = $nodeArry['emailid'];
+                            $account->init = $nodeArry['emailid'];
+                            $account->status = true;               
+                            $account->roles = array(
+                                2 => 'authenticated',
+                                7 => 'Members  Head Quarters Admin',
+                            );
+                            $account->timezone = variable_get('date_default_timezone', '');
+                            user_save($account);
+                            
+                            $uid = db_query("select uid from users where name='".$account->name."' and mail ='".$account->mail."'")->fetchField();
+                            //creating headquarter member group
+                            $node = new stdClass();
+                            $node->type = 'group';
+                            node_object_prepare($node);
+                            $title  = db_query("select nid from node where title='".str_replace("'","\'",$nodeArry['membername'])."' and type='group'")->fetchField();
+                            if(!empty($title)) {
+                            $node->title =  $nodeArry['membername']." ".$account->name; 
+                            }else {
+                            $node->title =  $nodeArry['membername'];
+                            }
+                            $node->field_hqfirst_name[LANGUAGE_NONE][0]['value'] = $nodeArry['firstname'];
+                            $node->field_last_name[LANGUAGE_NONE][0]['value'] = $nodeArry['lastname'];
+                            $node->field_position_in_headquarter[LANGUAGE_NONE][0]['value'] =  $nodeArry['position'];
+                            $node->field_contact_email_id[LANGUAGE_NONE][0]['email'] =  $nodeArry['emailid'];
+                            $node->field_company_email_id[LANGUAGE_NONE][0]['email'] =  $nodeArry['emailid'];
+                            $node->field_hq_state[LANGUAGE_NONE][0]['value'] = $nodeArry['state'];        
+                            $node->field_hq_city[LANGUAGE_NONE][0]['value'] = $nodeArry['city'];                                
+                            $node->field_hq_zip[LANGUAGE_NONE][0]['value'] = $nodeArry['zipcode'];        
+                            $node->field_street_adress[LANGUAGE_NONE][0]['value'] = $nodeArry['address'];
+                            $node->field_telephone[LANGUAGE_NONE][0]['value'] = $nodeArry['telephone'];
+                            $node->field_fax[LANGUAGE_NONE][0]['value'] = $nodeArry['fax'];
+                            $node->field_network[LANGUAGE_NONE][0]['nid'] = $form['network']['#value'];
+                           // echo $form['network']['#value'];
+                           // print_r($node);
+                           // $node->field_website_url[LANGUAGE_NONE][0]['url'] = $nodeArry['webpage']; 
+                          //  $node->field_website_url[LANGUAGE_NONE][0]['title'] =  $nodeArry['webpage'];
+                            $node->uid = $uid;
+                            $groupAdminId = $uid;
+                         //  if($nodeArry['country'] == "United States") {
+                                $countryCode = "US";
+                         //   }else {
+                          //  $countryCode = db_query("select iso2 from countries_country where name= '".$nodeArry['country']."'")->fetchField();
+                          //  }
+                            if(!empty($countryCode))
+                           $node->field_country_addr[LANGUAGE_NONE][0]['iso2'] = $countryCode;
+                            
+                            $node->language = LANGUAGE_NONE;                     
+                            $result = node_save($node);                      
+                   
+                     
+                     //adding head quarter member to network
+                      if(!empty($form['network']['#value'])) {                          
+                            $memid = db_query("SELECT nid FROM {node} WHERE title= '".addslashes($nodeArry['membername'])."' and type='group'")->fetchField();
+                            
+                            $gid = db_query("select gid from og where etid=".$form['network']['#value']."")->fetchField();
+                            
+                            $nid = db_query("select nid from node WHERE title='".str_replace("'","\'",$nodeArry['membername'])."' and type='group'")->fetchField();
+                            
+                            $currentGrouid = db_query("select gid from og where etid='".$nid."'")->fetchField();
+                            
+                           /* echo $currentGrouid."<br>";
+                            exit;*/
+                            
+                            $created=time();                           
+                          
+                        db_query("INSERT INTO og_membership (type, etid, entity_type, gid, state, created)
+                  VALUES ('og_membership_type_default', '".$memid."','node', '".$gid."', '".OG_STATE_ACTIVE."','".$created."')");
+                          
+                       db_query("INSERT INTO og_users_roles(uid,rid,gid) values('".$groupAdminId."',3,'".$currentGrouid."')");
+                    //   exit;
+                         }
+                            }
+                            
+                   }
+                 
+            }
+              
+            } 
+             drupal_set_message("Members has been imported successfully");
+            // exit;
+            }
+        }  
+
+}
+
+
